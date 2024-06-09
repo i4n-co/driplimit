@@ -42,18 +42,32 @@ go install github.com/i4n-co/driplimit/cmd/driplimit
 
 ```bash
 $ driplimit -print-defaults
+# Driplimit default configuration
+# ADDR: address to listen on
 ADDR=127.0.0.1
+# CACHE_DURATION: cache entries time-to-live
 CACHE_DURATION=30s
+# DATABASE_NAME: database file name
 DATABASE_NAME=driplimit.db
+# DATA_DIR: directory where the database file is stored
 DATA_DIR=
+# GZIP_COMPRESSION: enable gzip compression
 GZIP_COMPRESSION=false
+# KEYS_CACHE_SIZE: maximum number of keys in the cache
 KEYS_CACHE_SIZE=65536
+# LOG_FORMAT: log format (text or json)
 LOG_FORMAT=text
+# LOG_SEVERITY: log severity level (debug, info, warn, error)
 LOG_SEVERITY=info
+# MODE: service mode (authoritative, async_authoritative, proxy)
 MODE=authoritative
+# PORT: port to listen on
 PORT=7131
-ROOT_KEYS_CACHE_SIZE=2048
-TIMEOUT=5s
+# SERVICE_KEYS_CACHE_SIZE: maximum number of service keys in the cache
+SERVICE_KEYS_CACHE_SIZE=2048
+# UPSTREAM_TIMEOUT: timeout for upstream requests
+UPSTREAM_TIMEOUT=5s
+# UPSTREAM_URL: upstream URL for proxy mode or SDK client
 UPSTREAM_URL=
 ```
 
