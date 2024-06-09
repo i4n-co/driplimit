@@ -24,15 +24,15 @@ type httpClient struct {
 func New(cfg *config.Config) driplimit.ServiceWithToken {
 	transport := &http.Transport{
 		Dial: (&net.Dialer{
-			Timeout: cfg.Timeout,
+			Timeout: cfg.UpstreamTimeout,
 		}).Dial,
-		TLSHandshakeTimeout: cfg.Timeout,
+		TLSHandshakeTimeout: cfg.UpstreamTimeout,
 	}
 
 	return &httpClient{
 		cfg: cfg,
 		client: &http.Client{
-			Timeout:   cfg.Timeout,
+			Timeout:   cfg.UpstreamTimeout,
 			Transport: transport,
 		},
 		logger: cfg.Logger().With("component", "client"),

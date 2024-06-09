@@ -13,9 +13,7 @@ func TestDefaults(t *testing.T) {
 	cfg := new(config.Config)
 	deflt, err := cfg.Defaults()
 	assert.NoError(t, err)
-	assert.Contains(t, deflt, "PORT")
-	assert.Contains(t, deflt, "LOG_SEVERITY")
-	assert.Equal(t, "7131", deflt["PORT"])
+	assert.Equal(t, config.ConfigHelp{Default: "127.0.0.1", Description: "address to listen on"}, deflt["ADDR"])
 }
 
 func TestFromEnvFile(t *testing.T) {

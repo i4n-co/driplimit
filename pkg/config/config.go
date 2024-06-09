@@ -42,19 +42,19 @@ func (m Mode) isValid() bool {
 
 // Config represents the configuration of the service
 type Config struct {
-	Addr                 string        `env:"ADDR, default=127.0.0.1"`
-	CacheDuration        time.Duration `env:"CACHE_DURATION, default=30s"`
-	DatabaseName         string        `env:"DATABASE_NAME, default=driplimit.db"`
-	DataDir              string        `env:"DATA_DIR"`
-	GzipCompression      bool          `env:"GZIP_COMPRESSION, default=false"`
-	KeysCacheSize        int           `env:"KEYS_CACHE_SIZE, default=65536"`
-	LogFormat            string        `env:"LOG_FORMAT, default=text"`
-	LogSeverity          string        `env:"LOG_SEVERITY, default=info"`
-	Mode                 Mode          `env:"MODE, default=authoritative"`
-	Port                 int           `env:"PORT, default=7131"`
-	ServiceKeysCacheSize int           `env:"ROOT_KEYS_CACHE_SIZE, default=2048"`
-	Timeout              time.Duration `env:"TIMEOUT, default=5s"`
-	UpstreamURL          string        `env:"UPSTREAM_URL"`
+	Addr                 string        `env:"ADDR, default=127.0.0.1" description:"address to listen on"`
+	CacheDuration        time.Duration `env:"CACHE_DURATION, default=30s" description:"cache entries time-to-live"`
+	DatabaseName         string        `env:"DATABASE_NAME, default=driplimit.db" description:"database file name"`
+	DataDir              string        `env:"DATA_DIR" description:"directory where the database file is stored"`
+	GzipCompression      bool          `env:"GZIP_COMPRESSION, default=false" description:"enable gzip compression"`
+	KeysCacheSize        int           `env:"KEYS_CACHE_SIZE, default=65536" description:"maximum number of keys in the cache"`
+	LogFormat            string        `env:"LOG_FORMAT, default=text" description:"log format (text or json)"`
+	LogSeverity          string        `env:"LOG_SEVERITY, default=info" description:"log severity level (debug, info, warn, error)"`
+	Mode                 Mode          `env:"MODE, default=authoritative" description:"service mode (authoritative, async_authoritative, proxy)"`
+	Port                 int           `env:"PORT, default=7131" description:"port to listen on"`
+	ServiceKeysCacheSize int           `env:"SERVICE_KEYS_CACHE_SIZE, default=2048" description:"maximum number of service keys in the cache"`
+	UpstreamTimeout      time.Duration `env:"UPSTREAM_TIMEOUT, default=5s" description:"timeout for upstream requests"`
+	UpstreamURL          string        `env:"UPSTREAM_URL" description:"upstream URL for proxy mode or SDK client"`
 
 	logger *slog.Logger
 }
@@ -147,8 +147,8 @@ func (c *Config) validate() error {
 	if !c.Mode.isValid() {
 		return fmt.Errorf("invalid mode: %s", c.Mode)
 	}
-	if c.Timeout <= 0 {
-		return fmt.Errorf("invalid timeout: %d", c.Timeout)
+	if c.UpstreamTimeout <= 0 {
+		return fmt.Errorf("invalid timeout: %d", c.UpstreamTimeout)
 	}
 	if c.Mode == Proxy && c.UpstreamURL == "" {
 		return fmt.Errorf("upstream URL is required for proxy mode")
@@ -203,11 +203,17 @@ func (c *Config) Logger() *slog.Logger {
 	return c.logger
 }
 
+type ConfigHelp struct {
+	Default     string
+	Description string
+}
+
 // Defaults returns all config keys and their default values
-func (c *Config) Defaults() (map[string]string, error) {
-	defaults := make(map[string]string)
+func (c *Config) Defaults() (map[string]ConfigHelp, error) {
+	defaults := make(map[string]ConfigHelp)
 	f := reflect.TypeOf(*c)
 	for i := 0; i < f.NumField(); i++ {
+		help := ConfigHelp{}
 		tags, err := structtag.Parse(string(f.Field(i).Tag))
 		if err != nil {
 			return nil, err
@@ -217,14 +223,17 @@ func (c *Config) Defaults() (map[string]string, error) {
 			continue
 		}
 		envKey := envTag.Name
-		envDefault := ""
 		for _, opt := range envTag.Options {
 			opt = strings.TrimSpace(opt)
-			if strings.HasPrefix(opt, "default=") {
-				envDefault = strings.TrimPrefix(opt, "default=")
+			switch {
+			case strings.HasPrefix(opt, "default="):
+				help.Default = strings.TrimPrefix(opt, "default=")
 			}
 		}
-		defaults[envKey] = envDefault
+
+		descriptionTag, _ := tags.Get("description")
+		help.Description = descriptionTag.Value()
+		defaults[envKey] = help
 	}
 	return defaults, nil
 }
@@ -243,7 +252,11 @@ func (c *Config) PrintDefaults() {
 	}
 	sort.Strings(keys)
 
+	fmt.Println("# Driplimit default configuration")
 	for _, key := range keys {
-		fmt.Printf("%s=%s\n", key, defaults[key])
+		if defaults[key].Description != "" {
+			fmt.Printf("# %s: %s\n", key, defaults[key].Description)
+		}
+		fmt.Printf("%s=%s\n", key, defaults[key].Default)
 	}
 }
