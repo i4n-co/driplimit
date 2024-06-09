@@ -1,0 +1,4 @@
+*.db*
+__debug_bin*
+.vscode/
+/driplimit
