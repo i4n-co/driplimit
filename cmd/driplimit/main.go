@@ -44,7 +44,7 @@ func main() {
 
 	service, err := initService(ctx, cfg)
 	if err != nil {
-		cfg.Logger().Error("failed to initialize service", "err", err)
+		cfg.Logger().Error("failed to initialize service", "err", err, "database_path", cfg.DatabasePath())
 		os.Exit(1)
 	}
 
