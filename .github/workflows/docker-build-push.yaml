@@ -45,7 +45,7 @@ jobs:
           [ "$VERSION" == "main" ] && VERSION=latest
 
           # This uses the pull request branch name in the event of a pull request (branch merge)
-          [ "$VERSION" == "merge" ] && VERSION="${{ github.head_ref }}"
+          [ "$VERSION" == "merge" ] && VERSION="pr-${{ github.head_ref }}"
 
           echo IMAGE_ID=$IMAGE_ID
           echo VERSION=$VERSION
