@@ -28,7 +28,17 @@ Available soon.
 
 ## How to install Driplimit ?
 
-The best way to install `driplimit` is to use the official Docker image (available soon).
+The best way to install `driplimit` is to use the [official Docker image](https://github.com/i4n-co/driplimit/pkgs/container/driplimit):
+
+```bash
+$ docker run --detach \
+             --name=driplimit \
+             --publish 7131:7131 \
+             ghcr.io/i4n-co/driplimit
+
+$ docker exec driplimit driplimit -init-admin
+$ docker stop driplimit
+```
 
 Alternatively, you can choose to build the binary with the standard Go (1.22+) toolchain:
 
@@ -38,10 +48,24 @@ go install github.com/i4n-co/driplimit/cmd/driplimit
 
 ## How to configure Driplimit ?
 
-`driplimit` is configurable via `Env vars`, the complete list of available configurations can be generated via the command line:
+Driplimit is configurable via `Env vars`:
 
 ```bash
-$ driplimit -print-defaults
+$ docker run --detach \
+             --name=driplimit \
+             --publish 8080:8080 \
+             --env PORT=8080 \
+             --env LOG_FORMAT=json \
+             ghcr.io/i4n-co/driplimit
+
+$ docker logs driplimit
+{"time":"2024-06-10T12:47:11.180877589Z","level":"INFO","msg":"starting driplimit...","component":"api","addr":"0.0.0.0:8080"}
+```
+
+The complete list of available configurations can be generated via the command line:
+
+```bash
+$ docker exec driplimit driplimit -print-defaults
 # Driplimit default configuration
 # ADDR: address to listen on
 ADDR=127.0.0.1
@@ -73,7 +97,7 @@ UPSTREAM_URL=
 
 Driplimit can also be configured via env-file like so:
 
-`$ driplimit -env-file=/etc/driplimit/config.env`
+`$ driplimit -config=/etc/driplimit/config.env`
 
 ## What are the driplimit modes ?
 
