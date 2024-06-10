@@ -38,19 +38,19 @@ func (k *KeyspaceGetPayload) Validate(validator *validator.Validate) error {
 
 // KeyspaceList represents a list of keyspaces.
 type KeyspaceList struct {
-	ListMetadata
-	Keyspaces []*Keyspace `json:"keyspaces"`
+	List      ListMetadata `json:"list"`
+	Keyspaces []*Keyspace  `json:"keyspaces"`
 }
 
 // KeyspaceListPayload represents the payload for listing keyspaces.
 type KeyspaceListPayload struct {
-	ListPayload
-	FilterBySKIDKeyspacesPolicies string `json:"-"` // filter by sk keyspaces policies
+	List                          ListPayload `json:"list"`
+	FilterBySKIDKeyspacesPolicies string      `json:"-"` // filter by sk keyspaces policies
 }
 
 // Validate validates the list payload.
 func (kl *KeyspaceListPayload) Validate(validator *validator.Validate) error {
-	err := kl.ListPayload.Validate(validator)
+	err := kl.List.Validate(validator)
 	if err != nil {
 		return err
 	}

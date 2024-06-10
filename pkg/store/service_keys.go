@@ -125,7 +125,7 @@ func (s *Store) ListServiceKeys(ctx context.Context, payload driplimit.ServiceKe
 	}
 	defer conn.Close()
 
-	err = conn.SelectContext(ctx, &models, "SELECT * FROM v_service_keys ORDER BY created_at LIMIT $1 OFFSET $2", payload.Limit, payload.Offset())
+	err = conn.SelectContext(ctx, &models, "SELECT * FROM v_service_keys ORDER BY created_at LIMIT $1 OFFSET $2", payload.List.Limit, payload.List.Offset())
 	if err != nil {
 		return nil, fmt.Errorf("failed to list service keys: %w", err)
 	}
@@ -136,8 +136,8 @@ func (s *Store) ListServiceKeys(ctx context.Context, payload driplimit.ServiceKe
 	}
 
 	list := &driplimit.ServiceKeyList{
-		ListMetadata: driplimit.NewListMetadata(payload.ListPayload, totalCount),
-		ServiceKeys:  make([]*driplimit.ServiceKey, 0),
+		List:        driplimit.NewListMetadata(payload.List, totalCount),
+		ServiceKeys: make([]*driplimit.ServiceKey, 0),
 	}
 	for _, model := range models {
 		list.ServiceKeys = append(list.ServiceKeys, model.ServiceKey())

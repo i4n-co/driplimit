@@ -162,19 +162,19 @@ func (k *KeyGetPayload) GetKeyBy() (field string, value string, err error) {
 
 // KeyList represents a list of keys.
 type KeyList struct {
-	ListMetadata
-	Keys []*Key `json:"keys"`
+	List ListMetadata `json:"list"`
+	Keys []*Key       `json:"keys"`
 }
 
 // KeyspaceListPayload represents the payload for listing keyspaces.
 type KeyListPayload struct {
-	ListPayload
-	KSID string `json:"ksid" validate:"required"`
+	List ListPayload `json:"list"`
+	KSID string      `json:"ksid" validate:"required"`
 }
 
 // Validate validates the list payload.
 func (kl *KeyListPayload) Validate(validator *validator.Validate) error {
-	err := kl.ListPayload.Validate(validator)
+	err := kl.List.Validate(validator)
 	if err != nil {
 		return err
 	}

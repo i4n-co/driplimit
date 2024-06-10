@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"sync"
 
 	"github.com/i4n-co/driplimit"
 	"github.com/i4n-co/driplimit/pkg/config"
@@ -19,6 +20,8 @@ import (
 // Server is the API server
 type Server struct {
 	service driplimit.ServiceWithToken
+	mu      *sync.Mutex
+	rpcs    rpcs
 	router  *fiber.App
 	logger  *slog.Logger
 	cfg     *config.Config
@@ -27,6 +30,7 @@ type Server struct {
 // New creates an API server
 func New(cfg *config.Config, service driplimit.ServiceWithToken) *Server {
 	server := new(Server)
+	server.mu = new(sync.Mutex)
 	server.cfg = cfg
 	server.service = service
 	server.logger = cfg.Logger().With("component", "api")
@@ -46,12 +50,14 @@ func New(cfg *config.Config, service driplimit.ServiceWithToken) *Server {
 	v1 := server.router.Group("/v1")
 	v1.Use(authenticate())
 
-	v1.Post("/keys.create", server.keysCreate)
-	v1.Post("/keys.check", server.keysCheck)
-	v1.Post("/keys.get", server.keysGet)
-	v1.Post("/keys.list", server.keysList)
+	// Register all RPCs
+	server.RegisterRPC(v1, server.keysCreate())
+	server.RegisterRPC(v1, server.keysCheck())
+	server.RegisterRPC(v1, server.keysList())
+	server.RegisterRPC(v1, server.keysGet())
+	// TODO 
 	v1.Post("/keys.delete", server.keysDelete)
-	
+
 	v1.Post("/keyspaces.get", server.keyspacesGet)
 	v1.Post("/keyspaces.create", server.keyspacesCreate)
 	v1.Post("/keyspaces.list", server.keyspacesList)

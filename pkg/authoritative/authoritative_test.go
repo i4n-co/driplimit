@@ -31,7 +31,7 @@ func TestRateLimit(t *testing.T) {
 		Ratelimit: driplimit.RatelimitPayload{
 			Limit:          10,
 			RefillRate:     1,
-			RefillInterval: 60 * 1000,
+			RefillInterval: driplimit.Milliseconds{Duration: time.Minute},
 		},
 	})
 	if err != nil {
@@ -44,7 +44,7 @@ func TestRateLimit(t *testing.T) {
 		Ratelimit: driplimit.RatelimitPayload{
 			Limit:          100,
 			RefillRate:     1,
-			RefillInterval: 10,
+			RefillInterval: driplimit.Milliseconds{Duration: 10 * time.Millisecond},
 		},
 	})
 	if err != nil {

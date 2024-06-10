@@ -17,7 +17,7 @@ type ServiceKey struct {
 }
 
 type ServiceKeyList struct {
-	ListMetadata
+	List        ListMetadata  `json:"list"`
 	ServiceKeys []*ServiceKey `json:"service_keys"`
 }
 
@@ -51,11 +51,11 @@ func (r *ServiceKeyCreatePayload) Validate(validator *validator.Validate) error 
 }
 
 type ServiceKeyListPayload struct {
-	ListPayload
+	List ListPayload `json:"list"`
 }
 
 func (r *ServiceKeyListPayload) Validate(validator *validator.Validate) error {
-	return r.ListPayload.Validate(validator)
+	return r.List.Validate(validator)
 }
 
 type ServiceKeyDeletePayload struct {
