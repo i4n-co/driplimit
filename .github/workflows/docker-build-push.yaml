@@ -35,13 +35,18 @@ jobs:
           IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
           
           # This strips the git ref prefix from the version.
+          echo "${{ github.ref }}" # debug 
           VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
           
           # This strips the "v" prefix from the tag name.
           [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
           
-          # This uses the Docker `latest` tag convention.
+          # This uses the Docker `latest` tag convention if branch is main
           [ "$VERSION" == "main" ] && VERSION=latest
+
+          # This uses the pull request branch name in the event of a pull request (branch merge)
+          [ "$VERSION" == "merge" ] && VERSION="${{ github.base_ref }}"
+
           echo IMAGE_ID=$IMAGE_ID
           echo VERSION=$VERSION
           docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
