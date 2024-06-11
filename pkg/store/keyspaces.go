@@ -128,8 +128,8 @@ func (s *Store) ListKeyspaces(ctx context.Context, payload driplimit.KeyspaceLis
 	}
 
 	kslist := &driplimit.KeyspaceList{
-		List: driplimit.NewListMetadata(payload.List, totalCount),
-		Keyspaces:    make([]*driplimit.Keyspace, 0),
+		List:      driplimit.NewListMetadata(payload.List, totalCount),
+		Keyspaces: make([]*driplimit.Keyspace, 0),
 	}
 	for _, k := range ks {
 		kslist.Keyspaces = append(kslist.Keyspaces, k.ToKeyspace())

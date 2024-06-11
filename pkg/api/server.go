@@ -56,7 +56,7 @@ func New(cfg *config.Config, service driplimit.ServiceWithToken) *Server {
 	server.RegisterRPC(v1, server.keysList())
 	server.RegisterRPC(v1, server.keysGet())
 	server.RegisterRPC(v1, server.keysDelete())
-	
+
 	// Keyspaces namespace
 	server.RegisterRPC(v1, server.keyspacesGet())
 	server.RegisterRPC(v1, server.keyspacesList())

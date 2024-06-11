@@ -22,7 +22,7 @@ func (api *Server) serviceKeysCurrent() *rpc {
 				Admin:       true,
 				KeyspacesPolicies: map[string]driplimit.Policy{
 					"ks_abc": {
-						Read: true,
+						Read:  true,
 						Write: true,
 					},
 				},

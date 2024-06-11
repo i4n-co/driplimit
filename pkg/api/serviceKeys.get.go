@@ -15,8 +15,8 @@ func (api *Server) serviceKeysGet() *rpc {
 		Action:    "get",
 		Documentation: RPCDocumentation{
 			Description: "Get the service key by ID or by token",
-			Parameters:  driplimit.ServiceKeyGetPayload{
-				SKID: "sk_uvw",
+			Parameters: driplimit.ServiceKeyGetPayload{
+				SKID:  "sk_uvw",
 				Token: "",
 			},
 			Response: driplimit.ServiceKey{
@@ -25,7 +25,7 @@ func (api *Server) serviceKeysGet() *rpc {
 				Admin:       true,
 				KeyspacesPolicies: map[string]driplimit.Policy{
 					"ks_abc": {
-						Read: true,
+						Read:  true,
 						Write: true,
 					},
 				},

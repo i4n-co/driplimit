@@ -23,8 +23,8 @@ func (api *Server) keysList() *rpc {
 			},
 			Response: driplimit.KeyList{
 				List: driplimit.ListMetadata{
-					Page:  1,
-					Limit: 10,
+					Page:     1,
+					Limit:    10,
 					LastPage: 1,
 				},
 				Keys: []*driplimit.Key{

@@ -15,9 +15,9 @@ func (api *Server) serviceKeysList() *rpc {
 		Action:    "list",
 		Documentation: RPCDocumentation{
 			Description: "List all service keys",
-			Parameters:  driplimit.ServiceKeyListPayload{
+			Parameters: driplimit.ServiceKeyListPayload{
 				List: driplimit.ListPayload{
-					Page: 1,
+					Page:  1,
 					Limit: 10,
 				},
 			},
@@ -29,9 +29,9 @@ func (api *Server) serviceKeysList() *rpc {
 				},
 				ServiceKeys: []*driplimit.ServiceKey{
 					{
-						SKID:       "sk_uvw",
+						SKID:        "sk_uvw",
 						Description: fmt.Sprintf("cli generated admin service key at %s", time.Now().Format(time.RFC3339)),
-						Admin:      true,
+						Admin:       true,
 						KeyspacesPolicies: map[string]driplimit.Policy{
 							"ks_abc": {
 								Read:  true,

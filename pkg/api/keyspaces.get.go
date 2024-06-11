@@ -18,12 +18,12 @@ func (api *Server) keyspacesGet() *rpc {
 				KSID: "ks_abc",
 			},
 			Response: driplimit.Keyspace{
-				KSID: "ks_abc",
-				Name: "demo.yourapi.com (env: production)",
+				KSID:       "ks_abc",
+				Name:       "demo.yourapi.com (env: production)",
 				KeysPrefix: "demo_",
 				Ratelimit: &driplimit.Ratelimit{
-					Limit: 		100,
-					RefillRate: 1,
+					Limit:          100,
+					RefillRate:     1,
 					RefillInterval: driplimit.Milliseconds{Duration: time.Second},
 				},
 			},

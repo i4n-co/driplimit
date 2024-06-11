@@ -50,9 +50,9 @@ func (r *Ratelimit) Configured() bool {
 
 // RatelimitPayload represents the payload for configuring a rate limit.
 type RatelimitPayload struct {
-	Limit          int64          `json:"limit" validate:"gte=0" description:"The rate limit"`
-	RefillRate     int64          `json:"refill_rate" validate:"gte=0" description:"The rate at which the rate limit refills"`
-	RefillInterval Milliseconds `json:"refill_interval" validate:"gte=0" description:"The interval at which the rate limit refills"`
+	Limit          int64        `json:"limit" validate:"gte=0" description:"The rate limit"`
+	RefillRate     int64        `json:"refill_rate" validate:"gte=0" description:"The rate at which the rate limit refills"`
+	RefillInterval Milliseconds `json:"refill_interval" description:"The interval at which the rate limit refills"`
 }
 
 // Configured returns true if the rate limit is configured.
