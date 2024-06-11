@@ -24,6 +24,8 @@ jobs:
       
       - name: Setup Go
         uses: actions/setup-go@v5
+        with:
+          go-version: 1.22
 
       - name: Checkout Wiki
         uses: actions/checkout@v4
@@ -34,8 +36,8 @@ jobs:
       - name: Generate wiki api documentation
         run: |
           set -e
-          cd $GITHUB_WORKSPACE
-          go run cmd/wiki/generate.go > ${{github.repository}}.wiki/'RPC API V1.md'
+          cd $GITHUB_WORKSPACE/${{github.repository}}
+          go run cmd/wiki/generate.go > ../${{github.repository}}.wiki/'RPC API V1.md'
 
       - name: Push to wiki
         run: |
