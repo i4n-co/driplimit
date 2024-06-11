@@ -37,7 +37,7 @@ jobs:
         run: |
           set -e
           cd $GITHUB_WORKSPACE/${{github.repository}}
-          go run cmd/wiki/generate.go > ../${{github.repository}}.wiki/'RPC API V1.md'
+          go run cmd/wiki/generate.go > $GITHUB_WORKSPACE/${{github.repository}}.wiki/'RPC API V1.md'
 
       - name: Push to wiki
         run: |
