@@ -1,8 +1,10 @@
 ---
-name: GitHub Wiki upload
+name: wiki generate / push
 
 on:
   push:
+    branches:
+      - main
 
 concurrency:
   group: wiki
