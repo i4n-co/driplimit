@@ -24,7 +24,7 @@ See the [How to use section](./docs/how-to-use.md) in order to create your first
 
 ### RPC API Documentation
 
-Available soon.
+You can find the [RPC documentation on the wiki](https://github.com/i4n-co/driplimit/wiki/RPC-API-V1)
 
 ## How to install Driplimit ?
 

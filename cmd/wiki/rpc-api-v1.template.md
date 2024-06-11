@@ -1,7 +1,7 @@
 Driplimit works with a JSON RPC API. All calls are made via HTTP using the POST method. 
 The API returns 200 OK or 204 CREATED on success.
 
-See [Errors](/#errors) section in case of failure.
+See [Errors](https://github.com/i4n-co/driplimit/wiki/RPC-API-V1#errors) section in case of failure.
 
 {{ range $namespace, $docs := .RPCs }}
 ## {{ title $namespace }}
