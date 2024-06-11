@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"sync"
 
 	"github.com/i4n-co/driplimit"
 	"github.com/i4n-co/driplimit/pkg/config"
@@ -19,6 +20,8 @@ import (
 // Server is the API server
 type Server struct {
 	service driplimit.ServiceWithToken
+	mu      *sync.Mutex
+	rpcs    rpcs
 	router  *fiber.App
 	logger  *slog.Logger
 	cfg     *config.Config
@@ -27,6 +30,7 @@ type Server struct {
 // New creates an API server
 func New(cfg *config.Config, service driplimit.ServiceWithToken) *Server {
 	server := new(Server)
+	server.mu = new(sync.Mutex)
 	server.cfg = cfg
 	server.service = service
 	server.logger = cfg.Logger().With("component", "api")
@@ -46,23 +50,25 @@ func New(cfg *config.Config, service driplimit.ServiceWithToken) *Server {
 	v1 := server.router.Group("/v1")
 	v1.Use(authenticate())
 
-	v1.Post("/keys.create", server.keysCreate)
-	v1.Post("/keys.check", server.keysCheck)
-	v1.Post("/keys.get", server.keysGet)
-	v1.Post("/keys.list", server.keysList)
-	v1.Post("/keys.delete", server.keysDelete)
-	
-	v1.Post("/keyspaces.get", server.keyspacesGet)
-	v1.Post("/keyspaces.create", server.keyspacesCreate)
-	v1.Post("/keyspaces.list", server.keyspacesList)
-	v1.Post("/keyspaces.delete", server.keyspacesDelete)
+	// Keys namespace
+	server.RegisterRPC(v1, server.keysCreate())
+	server.RegisterRPC(v1, server.keysCheck())
+	server.RegisterRPC(v1, server.keysList())
+	server.RegisterRPC(v1, server.keysGet())
+	server.RegisterRPC(v1, server.keysDelete())
 
-	v1.Post("/serviceKeys.current", server.serviceKeysCurrent)
-	v1.Post("/serviceKeys.get", server.serviceKeysGet)
-	v1.Post("/serviceKeys.list", server.serviceKeysList)
-	v1.Post("/serviceKeys.delete", server.serviceKeysDelete)
-	v1.Post("/serviceKeys.create", server.serviceKeysCreate)
+	// Keyspaces namespace
+	server.RegisterRPC(v1, server.keyspacesGet())
+	server.RegisterRPC(v1, server.keyspacesList())
+	server.RegisterRPC(v1, server.keyspacesCreate())
+	server.RegisterRPC(v1, server.keyspacesDelete())
 
+	// ServiceKeys namespace
+	server.RegisterRPC(v1, server.serviceKeysCurrent())
+	server.RegisterRPC(v1, server.serviceKeysGet())
+	server.RegisterRPC(v1, server.serviceKeysList())
+	server.RegisterRPC(v1, server.serviceKeysDelete())
+	server.RegisterRPC(v1, server.serviceKeysCreate())
 	return server
 }
 
@@ -116,7 +122,7 @@ func (api *Server) errorHandler(ctx *fiber.Ctx, err error) error {
 	case errors.As(err, &jsonSyntaxErr):
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid json"})
 	case errors.As(err, &jsonUnmarshalErr):
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid json", "invalid_field": jsonUnmarshalErr.Field})
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid json", "invalid_fields": []string{jsonUnmarshalErr.Field}})
 	case errors.As(err, &fe):
 		return ctx.Status(fe.Code).JSON(fiber.Map{"error": fe.Message})
 	default:

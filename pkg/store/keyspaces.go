@@ -49,7 +49,7 @@ func (s *Store) CreateKeyspace(ctx context.Context, payload driplimit.KeyspaceCr
 	if payload.Ratelimit.Configured() {
 		ks.RateLimitLimit = payload.Ratelimit.Limit
 		ks.RateLimitRefillRate = payload.Ratelimit.RefillRate
-		ks.RateLimitRefillInterval = time.Duration(payload.Ratelimit.RefillInterval) * time.Millisecond
+		ks.RateLimitRefillInterval = payload.Ratelimit.RefillInterval.Duration
 	}
 	_, err := s.db.NamedExecContext(ctx, `
 		INSERT INTO keyspaces (
@@ -116,7 +116,7 @@ func (s *Store) ListKeyspaces(ctx context.Context, payload driplimit.KeyspaceLis
 	}
 	sql := fmt.Sprintf("SELECT * FROM %s ORDER BY name LIMIT $1 OFFSET $2", from)
 
-	err = conn.SelectContext(ctx, &ks, sql, payload.Limit, payload.Offset())
+	err = conn.SelectContext(ctx, &ks, sql, payload.List.Limit, payload.List.Offset())
 	if err != nil {
 		return nil, fmt.Errorf("failed to list keyspaces: %w", err)
 	}
@@ -128,8 +128,8 @@ func (s *Store) ListKeyspaces(ctx context.Context, payload driplimit.KeyspaceLis
 	}
 
 	kslist := &driplimit.KeyspaceList{
-		ListMetadata: driplimit.NewListMetadata(payload.ListPayload, totalCount),
-		Keyspaces:    make([]*driplimit.Keyspace, 0),
+		List:      driplimit.NewListMetadata(payload.List, totalCount),
+		Keyspaces: make([]*driplimit.Keyspace, 0),
 	}
 	for _, k := range ks {
 		kslist.Keyspaces = append(kslist.Keyspaces, k.ToKeyspace())

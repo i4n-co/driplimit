@@ -17,9 +17,9 @@ func (ks *Keyspace) ConfiguredRateLimit() bool {
 
 // KeyspaceCreatePayload represents the payload for creating a keyspace.
 type KeyspaceCreatePayload struct {
-	Name       string           `json:"name" validate:"required"`
-	KeysPrefix string           `json:"keys_prefix" validate:"required,gte=1,lte=16"`
-	Ratelimit  RatelimitPayload `json:"ratelimit"`
+	Name       string           `json:"name" validate:"required" description:"The name of the keyspace"`
+	KeysPrefix string           `json:"keys_prefix" validate:"required,gte=1,lte=16" description:"The prefix for the keys in the keyspace"`
+	Ratelimit  RatelimitPayload `json:"ratelimit" description:"The default rate limit configuration for keys in the keyspace"`
 }
 
 // Validate validates the keyspace create payload.
@@ -28,7 +28,7 @@ func (ks *KeyspaceCreatePayload) Validate(validator *validator.Validate) error {
 }
 
 type KeyspaceGetPayload struct {
-	KSID string `json:"ksid" validate:"required"`
+	KSID string `json:"ksid" validate:"required" description:"The id of the keyspace to get"`
 }
 
 // Validate validates the keyspace get payload.
@@ -38,19 +38,19 @@ func (k *KeyspaceGetPayload) Validate(validator *validator.Validate) error {
 
 // KeyspaceList represents a list of keyspaces.
 type KeyspaceList struct {
-	ListMetadata
-	Keyspaces []*Keyspace `json:"keyspaces"`
+	List      ListMetadata `json:"list"`
+	Keyspaces []*Keyspace  `json:"keyspaces"`
 }
 
 // KeyspaceListPayload represents the payload for listing keyspaces.
 type KeyspaceListPayload struct {
-	ListPayload
-	FilterBySKIDKeyspacesPolicies string `json:"-"` // filter by sk keyspaces policies
+	List                          ListPayload `json:"list" description:"The list options"`
+	FilterBySKIDKeyspacesPolicies string      `json:"-"` // filter by sk keyspaces policies
 }
 
 // Validate validates the list payload.
 func (kl *KeyspaceListPayload) Validate(validator *validator.Validate) error {
-	err := kl.ListPayload.Validate(validator)
+	err := kl.List.Validate(validator)
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func (kl *KeyspaceListPayload) Validate(validator *validator.Validate) error {
 
 // KeyspaceDeletePayload is the payload for deleting a keyspace.
 type KeyspaceDeletePayload struct {
-	KSID string `json:"ksid" validate:"required"`
+	KSID string `json:"ksid" validate:"required" description:"The id of the keyspace to delete"`
 }
 
 // Validate validates the key get payload.

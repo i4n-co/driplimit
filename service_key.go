@@ -17,13 +17,13 @@ type ServiceKey struct {
 }
 
 type ServiceKeyList struct {
-	ListMetadata
+	List        ListMetadata  `json:"list"`
 	ServiceKeys []*ServiceKey `json:"service_keys"`
 }
 
 type ServiceKeyGetPayload struct {
-	SKID  string `json:"skid"`
-	Token string `json:"token"`
+	SKID  string `json:"skid" description:"The id of the service key to get (skid takes precedence over token)"`
+	Token string `json:"token" description:"The token of the service key to get"`
 }
 
 func (r *ServiceKeyGetPayload) Validate(validator *validator.Validate) error {
@@ -41,9 +41,9 @@ func (r *ServiceKeyGetPayload) By() (field, value string) {
 }
 
 type ServiceKeyCreatePayload struct {
-	Description       string   `json:"description"`
-	Admin             bool     `json:"admin"`
-	KeyspacesPolicies Policies `json:"keyspaces_policies"`
+	Description       string   `json:"description" description:"The description of the service key"`
+	Admin             bool     `json:"admin" description:"The admin flag of the service key"`
+	KeyspacesPolicies Policies `json:"keyspaces_policies" description:"The keyspaces policies of the service key. Map keys are the keyspace ids and the values are the policies for the keyspace"`
 }
 
 func (r *ServiceKeyCreatePayload) Validate(validator *validator.Validate) error {
@@ -51,15 +51,15 @@ func (r *ServiceKeyCreatePayload) Validate(validator *validator.Validate) error 
 }
 
 type ServiceKeyListPayload struct {
-	ListPayload
+	List ListPayload `json:"list" description:"The list options"`
 }
 
 func (r *ServiceKeyListPayload) Validate(validator *validator.Validate) error {
-	return r.ListPayload.Validate(validator)
+	return r.List.Validate(validator)
 }
 
 type ServiceKeyDeletePayload struct {
-	SKID string `json:"skid" validate:"required"`
+	SKID string `json:"skid" validate:"required" description:"The id of the service key to delete"`
 }
 
 func (r *ServiceKeyDeletePayload) Validate(validator *validator.Validate) error {

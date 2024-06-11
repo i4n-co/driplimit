@@ -46,11 +46,12 @@ func NewServiceKeyModel(sk driplimit.ServiceKey) *ServiceKeyModel {
 }
 
 // CreateServiceKey creates a new service key with the given payload and returns the service key and its generated token.
-func (s *Store) CreateServiceKey(ctx context.Context, payload driplimit.ServiceKeyCreatePayload) (sk *driplimit.ServiceKey, key *string, err error) {
+func (s *Store) CreateServiceKey(ctx context.Context, payload driplimit.ServiceKeyCreatePayload) (sk *driplimit.ServiceKey, token *string, err error) {
 	model := new(ServiceKeyModel)
-	generatedKey := "sk_" + generate.Token()
+	randomToken := "sk_" + generate.Token()
+	fmt.Println("randomToken: ", randomToken, "hash: ", generate.Hash(randomToken))
 	model.SKID = generate.IDWithPrefix("sk_")
-	model.TokenHash = generate.Hash(generatedKey)
+	model.TokenHash = generate.Hash(randomToken)
 	model.Admin = payload.Admin
 	model.Description = payload.Description
 	model.CreatedAt = TimeNano{Time: time.Now()}
@@ -82,7 +83,7 @@ func (s *Store) CreateServiceKey(ctx context.Context, payload driplimit.ServiceK
 	sk = model.ServiceKey()
 	sk.KeyspacesPolicies = payload.KeyspacesPolicies
 
-	return sk, &generatedKey, nil
+	return sk, &randomToken, nil
 }
 
 // GetServiceKey returns a service key based on the given payload and populates the keyspace policies.
@@ -125,7 +126,7 @@ func (s *Store) ListServiceKeys(ctx context.Context, payload driplimit.ServiceKe
 	}
 	defer conn.Close()
 
-	err = conn.SelectContext(ctx, &models, "SELECT * FROM v_service_keys ORDER BY created_at LIMIT $1 OFFSET $2", payload.Limit, payload.Offset())
+	err = conn.SelectContext(ctx, &models, "SELECT * FROM v_service_keys ORDER BY created_at LIMIT $1 OFFSET $2", payload.List.Limit, payload.List.Offset())
 	if err != nil {
 		return nil, fmt.Errorf("failed to list service keys: %w", err)
 	}
@@ -136,8 +137,8 @@ func (s *Store) ListServiceKeys(ctx context.Context, payload driplimit.ServiceKe
 	}
 
 	list := &driplimit.ServiceKeyList{
-		ListMetadata: driplimit.NewListMetadata(payload.ListPayload, totalCount),
-		ServiceKeys:  make([]*driplimit.ServiceKey, 0),
+		List:        driplimit.NewListMetadata(payload.List, totalCount),
+		ServiceKeys: make([]*driplimit.ServiceKey, 0),
 	}
 	for _, model := range models {
 		list.ServiceKeys = append(list.ServiceKeys, model.ServiceKey())

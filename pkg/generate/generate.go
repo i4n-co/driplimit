@@ -19,7 +19,7 @@ func IDWithPrefix(prefix string) string {
 
 // Token generates a random token.
 func Token() string {
-	return gonanoid.MustGenerate("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789*$%+&", 64)
+	return gonanoid.MustGenerate("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789*%+&", 64)
 }
 
 // Hash generates a hash from a string.

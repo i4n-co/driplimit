@@ -112,7 +112,7 @@ func (sqlite *Store) CreateKey(ctx context.Context, payload driplimit.KeyCreateP
 		key.RateLimitStateLastRefilled = TimeNano{Time: time.Now()}
 		key.RateLimitLimit = payload.Ratelimit.Limit
 		key.RateLimitRefillRate = payload.Ratelimit.RefillRate
-		key.RateLimitRefillInterval = time.Duration(payload.Ratelimit.RefillInterval) * time.Millisecond
+		key.RateLimitRefillInterval = payload.Ratelimit.RefillInterval.Duration
 	}
 
 	_, err = sqlite.db.NamedExecContext(ctx, `
@@ -257,7 +257,7 @@ func (sqlite *Store) ListKeys(ctx context.Context, payload driplimit.KeyListPayl
 	if err != nil {
 		return nil, fmt.Errorf("failed to get keyspace by id: %w", err)
 	}
-	err = conn.SelectContext(ctx, &keys, "SELECT * FROM v_keys WHERE ksid = $1 ORDER BY name LIMIT $2 OFFSET $3", ks.KSID, payload.Limit, payload.Offset())
+	err = conn.SelectContext(ctx, &keys, "SELECT * FROM v_keys WHERE ksid = $1 ORDER BY name LIMIT $2 OFFSET $3", ks.KSID, payload.List.Limit, payload.List.Offset())
 	if err != nil {
 		return nil, fmt.Errorf("failed to list keys: %w", err)
 	}
@@ -267,8 +267,8 @@ func (sqlite *Store) ListKeys(ctx context.Context, payload driplimit.KeyListPayl
 	}
 
 	klist = &driplimit.KeyList{
-		ListMetadata: driplimit.NewListMetadata(payload.ListPayload, totalCount),
-		Keys:         make([]*driplimit.Key, 0),
+		List: driplimit.NewListMetadata(payload.List, totalCount),
+		Keys: make([]*driplimit.Key, 0),
 	}
 	for _, k := range keys {
 		klist.Keys = append(klist.Keys, k.ToKey())

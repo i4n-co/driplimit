@@ -24,8 +24,8 @@ func NewListMetadata(payload ListPayload, totalCount int) ListMetadata {
 
 // ListPayload represents the payload for listing items.
 type ListPayload struct {
-	Page  int `json:"page" validate:"gte=1"`
-	Limit int `json:"limit" validate:"gte=1,lte=100"`
+	Page  int `json:"page" validate:"gte=1" description:"The page number"`
+	Limit int `json:"limit" validate:"gte=1,lte=100" description:"The number of items per page"`
 }
 
 // Validate validates the list payload.
