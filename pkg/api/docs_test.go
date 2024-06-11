@@ -20,5 +20,4 @@ func TestGenerateDocs(t *testing.T) {
 	jsn, err := json.MarshalIndent(docs, "", "  ")
 	assert.NoError(t, err)
 	fmt.Printf("%s\n", string(jsn))
-
 }

@@ -16,8 +16,8 @@ const (
 
 // Policy gives the read and write permissions.
 type Policy struct {
-	Read  bool `json:"read"`
-	Write bool `json:"write"`
+	Read  bool `json:"read" description:"Read permission"`
+	Write bool `json:"write" description:"Write permission"`
 }
 
 // all is a wildcard for all ids. This can be found in items policies

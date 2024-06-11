@@ -11,20 +11,21 @@ import (
 func (api *Server) keysList() *rpc {
 	return &rpc{
 		Namespace: "keys",
-		Action:    "get",
+		Action:    "list",
 		Documentation: RPCDocumentation{
 			Description: "List keys",
-			Param: driplimit.KeyListPayload{
+			Parameters: driplimit.KeyListPayload{
 				KSID: "ks_abc",
 				List: driplimit.ListPayload{
 					Page:  1,
 					Limit: 10,
 				},
 			},
-			Return: driplimit.KeyList{
+			Response: driplimit.KeyList{
 				List: driplimit.ListMetadata{
 					Page:  1,
 					Limit: 10,
+					LastPage: 1,
 				},
 				Keys: []*driplimit.Key{
 					{

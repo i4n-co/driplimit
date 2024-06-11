@@ -14,11 +14,11 @@ func (api *Server) keysCheck() *rpc {
 		Action:    "check",
 		Documentation: RPCDocumentation{
 			Description: "Check a key",
-			Param: driplimit.KeysCheckPayload{
+			Parameters: driplimit.KeysCheckPayload{
 				KSID:  "ks_abc",
 				Token: "demo_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
 			},
-			Return: driplimit.Key{
+			Response: driplimit.Key{
 				KID:       "k_xyz",
 				KSID:      "ks_abc",
 				CreatedAt: time.Now(),

@@ -14,7 +14,7 @@ func (api *Server) keysCreate() *rpc {
 		Action:    "create",
 		Documentation: RPCDocumentation{
 			Description: "Create a key",
-			Param: driplimit.KeyCreatePayload{
+			Parameters: driplimit.KeyCreatePayload{
 				KSID:      "ks_abc",
 				ExpiresIn: driplimit.Milliseconds{Duration: time.Minute * 5},
 				Ratelimit: driplimit.RatelimitPayload{
@@ -23,7 +23,7 @@ func (api *Server) keysCreate() *rpc {
 					RefillInterval: driplimit.Milliseconds{Duration: time.Second},
 				},
 			},
-			Return: driplimit.Key{
+			Response: driplimit.Key{
 				KID:       "k_xyz",
 				KSID:      "ks_abc",
 				Token:     "demo_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",

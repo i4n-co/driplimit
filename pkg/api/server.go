@@ -50,25 +50,25 @@ func New(cfg *config.Config, service driplimit.ServiceWithToken) *Server {
 	v1 := server.router.Group("/v1")
 	v1.Use(authenticate())
 
-	// Register all RPCs
+	// Keys namespace
 	server.RegisterRPC(v1, server.keysCreate())
 	server.RegisterRPC(v1, server.keysCheck())
 	server.RegisterRPC(v1, server.keysList())
 	server.RegisterRPC(v1, server.keysGet())
-	// TODO 
-	v1.Post("/keys.delete", server.keysDelete)
+	server.RegisterRPC(v1, server.keysDelete())
+	
+	// Keyspaces namespace
+	server.RegisterRPC(v1, server.keyspacesGet())
+	server.RegisterRPC(v1, server.keyspacesList())
+	server.RegisterRPC(v1, server.keyspacesCreate())
+	server.RegisterRPC(v1, server.keyspacesDelete())
 
-	v1.Post("/keyspaces.get", server.keyspacesGet)
-	v1.Post("/keyspaces.create", server.keyspacesCreate)
-	v1.Post("/keyspaces.list", server.keyspacesList)
-	v1.Post("/keyspaces.delete", server.keyspacesDelete)
-
-	v1.Post("/serviceKeys.current", server.serviceKeysCurrent)
-	v1.Post("/serviceKeys.get", server.serviceKeysGet)
-	v1.Post("/serviceKeys.list", server.serviceKeysList)
-	v1.Post("/serviceKeys.delete", server.serviceKeysDelete)
-	v1.Post("/serviceKeys.create", server.serviceKeysCreate)
-
+	// ServiceKeys namespace
+	server.RegisterRPC(v1, server.serviceKeysCurrent())
+	server.RegisterRPC(v1, server.serviceKeysGet())
+	server.RegisterRPC(v1, server.serviceKeysList())
+	server.RegisterRPC(v1, server.serviceKeysDelete())
+	server.RegisterRPC(v1, server.serviceKeysCreate())
 	return server
 }
 
@@ -122,7 +122,7 @@ func (api *Server) errorHandler(ctx *fiber.Ctx, err error) error {
 	case errors.As(err, &jsonSyntaxErr):
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid json"})
 	case errors.As(err, &jsonUnmarshalErr):
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid json", "invalid_field": jsonUnmarshalErr.Field})
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid json", "invalid_fields": []string{jsonUnmarshalErr.Field}})
 	case errors.As(err, &fe):
 		return ctx.Status(fe.Code).JSON(fiber.Map{"error": fe.Message})
 	default:

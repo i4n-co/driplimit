@@ -1,91 +1,96 @@
 package api
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 
 	"github.com/fatih/structtag"
 )
 
+// NamespacedDoc is a map of namespace to GeneratedRPCDocumentation
+type NamespacedDoc map[string][]GeneratedRPCDocumentation
+
+// Docs is the documentation for the API
+type Docs struct {
+	RPCs NamespacedDoc
+}
+
+// RPCDocumentation is the documentation for an RPC endpoint
 type RPCDocumentation struct {
+	Path        string `json:"path"`
 	Description string `json:"description"`
-	Param       any    `json:"input"`
-	Return      any    `json:"output"`
+	Parameters  any    `json:"parameters,omitempty"`
+	Response    any    `json:"response,omitempty"`
+	Code        int    `json:"code,omitempty"`
 }
 
+// RPCDocumentationField is a field in an GeneratedRPCDocumentation
 type RPCDocumentationField struct {
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
-	Type        string `json:"type"`
-	Required    bool   `json:"required,omitempty"`
+	Name        string                  `json:"name"`
+	Description string                  `json:"description,omitempty"`
+	Type        string                  `json:"type"`
+	MapOf       string                  `json:"map_of,omitempty"`
+	Required    bool                    `json:"required,omitempty"`
+	SubFields   []RPCDocumentationField `json:"sub_fields,omitempty"`
 }
 
-type EnhancedRPCDocumentation struct {
+// GeneratedRPCDocumentation is the documentation for an RPC endpoint
+// with parameter fields automatically discovered
+type GeneratedRPCDocumentation struct {
 	RPCDocumentation
 	ParamFields []RPCDocumentationField `json:"param_fields"`
 }
 
-// NamespaceDoc is a map of namespace to RPCDoc
-type NamespaceDoc map[string][]EnhancedRPCDocumentation
-
-type Docs struct {
-	RPCs NamespaceDoc
-}
-
+// GenerateDocs generates the documentation for the API
 func (api *Server) GenerateDocs() (*Docs, error) {
 	docs := new(Docs)
-	docs.RPCs = make(NamespaceDoc)
+	docs.RPCs = make(NamespacedDoc)
 	for _, rpc := range api.rpcs {
-		docs.RPCs[rpc.Namespace] = append(docs.RPCs[rpc.Namespace], rpc.Documentation.Enhance())
+		rpcDoc := rpc.Documentation.DocumentStruct()
+		rpcDoc.Path = rpc.path()
+		if rpcDoc.Code == 0 {
+			rpcDoc.Code = 200
+		}
+		docs.RPCs[rpc.Namespace] = append(docs.RPCs[rpc.Namespace], rpcDoc)
 	}
 	return docs, nil
 }
 
-func (doc RPCDocumentation) Enhance() EnhancedRPCDocumentation {
-	ed := EnhancedRPCDocumentation{
+// DocumentStruct recursively documents a struct
+func (doc RPCDocumentation) DocumentStruct() GeneratedRPCDocumentation {
+	ed := GeneratedRPCDocumentation{
 		RPCDocumentation: doc,
 	}
 
-	documentStruct(doc.Param, "", &ed.ParamFields)
+	documentStruct(doc.Parameters, &ed.ParamFields)
 	return ed
 }
 
-func documentStruct(strct any, prefix string, docfields *[]RPCDocumentationField) {
+func documentStruct(strct any, docfields *[]RPCDocumentationField) {
 	t := reflect.TypeOf(strct)
+	if t == nil {
+		return
+	}
 	for i := 0; i < t.NumField(); i++ {
-		if t.Field(i).Type.String() == "time.Time" {
-			*docfields = append(*docfields, RPCDocumentationField{
-				Name:     prefix + jsonName(t.Field(i)),
-				Type:     "timestamp",
-				Required: isRequired(t.Field(i)),
-			})
+		docfield := documentField(t.Field(i))
+		if docfield.Name == "-" {
 			continue
 		}
-		if strings.HasPrefix(t.Field(i).Type.String(), "int") {
-			*docfields = append(*docfields, RPCDocumentationField{
-				Name:     prefix + jsonName(t.Field(i)),
-				Type:     "integer",
-				Required: isRequired(t.Field(i)),
-			})
-			continue
+		if docfield.Type == "object" {
+			docfield.SubFields = make([]RPCDocumentationField, 0)
+			documentStruct(reflect.New(t.Field(i).Type).Elem().Interface(), &docfield.SubFields)
 		}
-		if t.Field(i).Type.String() == "driplimit.Milliseconds" {
-			*docfields = append(*docfields, RPCDocumentationField{
-				Name:     prefix + jsonName(t.Field(i)),
-				Type:     "integer (in milliseconds)",
-				Required: isRequired(t.Field(i)),
-			})
-			continue
+		if docfield.Type == "map" {
+			docfield.SubFields = make([]RPCDocumentationField, 1)
+			docfield.SubFields[0].Name = ""
+			docfield.SubFields[0].Type = docFieldType(t.Field(i).Type.Key())
+			docfield.SubFields[0].Required = true
+			docfield.SubFields[0].Description = "keys of the map"
+			docfield.SubFields[0].SubFields = make([]RPCDocumentationField, 0)
+			documentStruct(reflect.New(t.Field(i).Type.Elem()).Elem().Interface(), &docfield.SubFields[0].SubFields)
 		}
-		if t.Field(i).Type.Kind() == reflect.Struct {
-			documentStruct(reflect.New(t.Field(i).Type).Elem().Interface(), jsonName(t.Field(i))+".", docfields)
-			continue
-		}
-		*docfields = append(*docfields, RPCDocumentationField{
-			Name:     prefix + jsonName(t.Field(i)),
-			Type:     t.Field(i).Type.String(),
-			Required: isRequired(t.Field(i)),
-		})
+		*docfields = append(*docfields, docfield)
 	}
 }
 
@@ -123,4 +128,39 @@ func description(field reflect.StructField) string {
 		return ""
 	}
 	return descriptionTag.Name
+}
+
+func documentField(field reflect.StructField) RPCDocumentationField {
+	doc := RPCDocumentationField{}
+
+	doc.Name = jsonName(field)
+	doc.Description = description(field)
+	doc.Type = docFieldType(field.Type)
+	doc.Required = isRequired(field)
+	if doc.Type == "object" || strings.HasPrefix(doc.Type, "map") {
+		doc.SubFields = make([]RPCDocumentationField, 0)
+	}
+	return doc
+}
+
+func docFieldType(field reflect.Type) (fieldType string) {
+	if field.String() == "time.Time" {
+		return "timestamp"
+	}
+	if strings.HasPrefix(field.String(), "int") {
+		return "integer"
+	}
+	if field.String() == "driplimit.Milliseconds" {
+		return "integer"
+	}
+	if field.Kind() == reflect.Struct {
+		return "object"
+	}
+	if field.Kind() == reflect.Slice {
+		return "array"
+	}
+	if field.Kind() == reflect.Map {
+		return "map"
+	}
+	return fmt.Sprintf("%v", field)
 }

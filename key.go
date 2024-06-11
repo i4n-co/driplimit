@@ -104,10 +104,10 @@ func (k *Key) Expired() bool {
 
 // KeyCreatePayload is the payload for creating a key.
 type KeyCreatePayload struct {
-	KSID      string           `json:"ksid" validate:"required"`
-	ExpiresIn Milliseconds     `json:"expires_in"`
-	ExpiresAt time.Time        `json:"expires_at"`
-	Ratelimit RatelimitPayload `json:"ratelimit"`
+	KSID      string           `json:"ksid" validate:"required" description:"The id of the keyspace to which the key belongs to"`
+	ExpiresIn Milliseconds     `json:"expires_in" description:"The duration in milliseconds after which the key expires"`
+	ExpiresAt time.Time        `json:"expires_at" description:"The time at which the key expires (expires_at takes precedence over expires_in)"`
+	Ratelimit RatelimitPayload `json:"ratelimit" validate:"required" description:"The rate limit configuration for the key"`
 }
 
 // Validate validates the key create payload.
@@ -121,8 +121,8 @@ func (k *KeyCreatePayload) Validate(validator *validator.Validate) error {
 
 // KeyCheckPayload is the payload for checking a key.
 type KeysCheckPayload struct {
-	KSID  string `json:"ksid" validate:"required"`
-	Token string `json:"token" validate:"required"`
+	KSID  string `json:"ksid" validate:"required" description:"The id of the keyspace to which the key belongs to"`
+	Token string `json:"token" validate:"required" description:"The token to check"`
 }
 
 // Validate validates the key check payload.
@@ -132,9 +132,9 @@ func (k *KeysCheckPayload) Validate(validator *validator.Validate) error {
 
 // KeyGetPayload is the payload for getting a key.
 type KeyGetPayload struct {
-	KSID  string `json:"ksid" validate:"required"`
-	KID   string `json:"kid"`
-	Token string `json:"token"`
+	KSID  string `json:"ksid" validate:"required" description:"The id of the keyspace to which the key belongs to"`
+	KID   string `json:"kid" description:"The id of the key to get (kid takes precedence over token if both are provided)"`
+	Token string `json:"token" description:"The token of the key to get"`
 }
 
 // Validate validates the key get payload.
@@ -168,8 +168,8 @@ type KeyList struct {
 
 // KeyspaceListPayload represents the payload for listing keyspaces.
 type KeyListPayload struct {
-	List ListPayload `json:"list"`
-	KSID string      `json:"ksid" validate:"required"`
+	List ListPayload `json:"list" description:"The list options"`
+	KSID string      `json:"ksid" validate:"required" description:"The id of the keyspace to which the keys belong to"`
 }
 
 // Validate validates the list payload.
@@ -183,8 +183,8 @@ func (kl *KeyListPayload) Validate(validator *validator.Validate) error {
 
 // KeyDeletePayload is the payload for deleting a key.
 type KeyDeletePayload struct {
-	KSID string `json:"ksid" validate:"required"`
-	KID  string `json:"kid" validate:"required"`
+	KSID string `json:"ksid" validate:"required" description:"The id of the keyspace to which the key belongs to"`
+	KID  string `json:"kid" validate:"required" description:"The id of the key to delete"`
 }
 
 // Validate validates the key get payload.

@@ -14,11 +14,11 @@ func (api *Server) keysGet() *rpc {
 		Action:    "get",
 		Documentation: RPCDocumentation{
 			Description: "Get a key",
-			Param: driplimit.KeyGetPayload{
+			Parameters: driplimit.KeyGetPayload{
 				KSID: "ks_abc",
 				KID:  "k_xyz",
 			},
-			Return: driplimit.Key{
+			Response: driplimit.Key{
 				KID:       "k_xyz",
 				KSID:      "ks_abc",
 				CreatedAt: time.Now(),
