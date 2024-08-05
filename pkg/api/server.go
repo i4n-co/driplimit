@@ -43,9 +43,11 @@ func New(cfg *config.Config, service driplimit.ServiceWithToken) *Server {
 		ErrorHandler:          server.errorHandler,
 		Network:               network,
 	})
-	server.router.Use(slogfiber.New(server.logger))
+	server.router.Use(slogfiber.NewWithFilters(server.logger, slogfiber.IgnorePath("/healthz")))
 	server.router.Use(compress.New(compress.Config{Level: compressionMode(cfg)}))
 	server.router.Use(recover.New())
+	
+	server.router.Get("/healthz", healthz)
 
 	v1 := server.router.Group("/v1")
 	v1.Use(authenticate())
@@ -138,3 +140,6 @@ func compressionMode(cfg *config.Config) compress.Level {
 	}
 	return compress.LevelDisabled
 }
+
+// healthz always returns true. This handler is used for monitoring purpose.
+func healthz(c *fiber.Ctx) error { return c.JSON(map[string]bool{"healthy": true}) }
