@@ -257,7 +257,7 @@ func (sqlite *Store) ListKeys(ctx context.Context, payload driplimit.KeyListPayl
 	if err != nil {
 		return nil, fmt.Errorf("failed to get keyspace by id: %w", err)
 	}
-	err = conn.SelectContext(ctx, &keys, "SELECT * FROM v_keys WHERE ksid = $1 ORDER BY name LIMIT $2 OFFSET $3", ks.KSID, payload.List.Limit, payload.List.Offset())
+	err = conn.SelectContext(ctx, &keys, "SELECT * FROM v_keys WHERE ksid = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3", ks.KSID, payload.List.Limit, payload.List.Offset())
 	if err != nil {
 		return nil, fmt.Errorf("failed to list keys: %w", err)
 	}
