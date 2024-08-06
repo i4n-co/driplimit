@@ -30,7 +30,7 @@ See [Errors](https://github.com/i4n-co/driplimit/wiki/RPC-API-V1#errors) section
 <summary> <b>cURL example</b> </summary>
 
 ```bash
-$ curl -X POST
+$ curl -X POST \
        -H "Content-Type: application/json" \
        -H "Authorization: Bearer <token>" \{{ if ne $doc.RPCDocumentation.Parameters nil }}
        --data '
