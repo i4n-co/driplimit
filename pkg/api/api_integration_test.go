@@ -141,7 +141,7 @@ func TestDriplimitAPI(t *testing.T) {
 
 	err = cli.KeyDelete(ctx, driplimit.KeyDeletePayload{
 		KSID: withRateLimitKS.KSID,
-		KID:  lkeys.Keys[0].KID,
+		KID:  lkeys.Keys[1].KID,
 	})
 	assert.NoError(t, err)
 
@@ -162,4 +162,17 @@ func TestDriplimitAPI(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, nsk.Admin)
 
+	k, err = cli.WithServiceToken(nsk.Token).KeyCheck(ctx, driplimit.KeysCheckPayload{
+		KSID:  withRateLimitKS.KSID,
+		Token: token,
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, int64(8), k.Ratelimit.State.Remaining)
+
+	// Should fail as nsk is read only
+	err = cli.WithServiceToken(nsk.Token).KeyDelete(ctx, driplimit.KeyDeletePayload{
+		KSID: withRateLimitKS.KSID,
+		KID:  k.KID,
+	})
+	assert.ErrorIs(t, driplimit.ErrUnauthorized, err)
 }

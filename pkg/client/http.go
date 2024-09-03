@@ -20,6 +20,14 @@ type HTTP struct {
 	serviceToken    string
 }
 
+func (http *HTTP) clone() *HTTP {
+	return &HTTP{
+		upstreamURL:     http.upstreamURL,
+		sendRequestFunc: http.sendRequestFunc,
+		serviceToken:    http.serviceToken,
+	}
+}
+
 // New creates a new driplimit http client
 func New(upstreamURL string, timeout ...time.Duration) *HTTP {
 	timeoutDuration := 5 * time.Second
@@ -45,14 +53,16 @@ func New(upstreamURL string, timeout ...time.Duration) *HTTP {
 // WithSendRequestFunc replace the default client http Do func by a custom one.
 // This method is mainly used for tests
 func (h *HTTP) WithSendRequestFunc(f func(req *http.Request) (*http.Response, error)) *HTTP {
-	h.sendRequestFunc = f
-	return h
+	nh := h.clone()
+	nh.sendRequestFunc = f
+	return nh
 }
 
 // WithServiceToken sets a default service token used in all requests
 func (h *HTTP) WithServiceToken(token string) *HTTP {
-	h.serviceToken = token
-	return h
+	nh := h.clone()
+	nh.serviceToken = token
+	return nh
 }
 
 // do sends a request to the upstream server

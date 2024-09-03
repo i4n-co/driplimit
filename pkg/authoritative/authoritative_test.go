@@ -78,14 +78,14 @@ func TestRateLimit(t *testing.T) {
 	}
 	assert.Equal(t, int64(100), key.Ratelimit.State.Remaining)
 
-	_, err = app.KeyCreate(ctx, driplimit.KeyCreatePayload{
+	key, err = app.KeyCreate(ctx, driplimit.KeyCreatePayload{
 		KSID:      ks.KSID,
 		ExpiresAt: time.Now(),
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	key, _ = app.KeyGet(ctx, driplimit.KeyGetPayload{KSID: ks.KSID, Token: token})
+	key, _ = app.KeyGet(ctx, driplimit.KeyGetPayload{KSID: ks.KSID, Token: key.Token})
 	assert.True(t, key.Expired())
 }
 
