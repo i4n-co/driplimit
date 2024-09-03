@@ -45,7 +45,6 @@ func (proxy *proxyCache) cacheRefresher(ctx context.Context) {
 
 type refreshOrder struct {
 	driplimit.KeysCheckPayload
-	serviceToken string
 }
 
 func (order refreshOrder) CacheKey() string {
@@ -54,7 +53,7 @@ func (order refreshOrder) CacheKey() string {
 
 // refreshCache refreshes the cache with the upstream synchronously.
 func (proxy *proxyCache) refreshCache(ctx context.Context, order refreshOrder) error {
-	key, err := proxy.upstream.WithToken(order.serviceToken).KeyCheck(ctx, order.KeysCheckPayload)
+	key, err := proxy.upstream.KeyCheck(ctx, order.KeysCheckPayload)
 	if err != nil {
 		proxy.cache.Errors.Add(order.CacheKey(), err)
 		return fmt.Errorf("failed to check key: %w", err)

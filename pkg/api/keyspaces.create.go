@@ -39,7 +39,7 @@ func (api *Server) keyspacesCreate() *rpc {
 			if err := c.BodyParser(payload); err != nil {
 				return err
 			}
-			keyspace, err := api.service.WithToken(token(c)).KeyspaceCreate(c.Context(), *payload)
+			keyspace, err := api.service.KeyspaceCreate(c.Context(), *payload.WithServiceToken(token(c)))
 			if err != nil {
 				return err
 			}

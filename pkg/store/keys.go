@@ -38,7 +38,6 @@ func NewKeyModel(key driplimit.Key) *KeyModel {
 	model := &KeyModel{
 		KID:       key.KID,
 		KSID:      key.KSID,
-		TokenHash: key.TokenHash,
 		LastUsed:  TimeNano{Time: key.LastUsed},
 		ExpiresAt: TimeNano{Time: key.ExpiresAt},
 		CreatedAt: TimeNano{Time: key.CreatedAt},
@@ -62,7 +61,6 @@ func (model *KeyModel) ToKey() *driplimit.Key {
 	key := &driplimit.Key{
 		KID:       model.KID,
 		KSID:      model.KSID,
-		TokenHash: model.TokenHash,
 		LastUsed:  model.LastUsed.Time,
 		ExpiresAt: model.ExpiresAt.Time,
 		CreatedAt: model.CreatedAt.Time,

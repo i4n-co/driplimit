@@ -70,4 +70,5 @@ If HTTP response code is greater than or equal to 400, the api returns a json ob
 * `404` not found
 * `409` already exists
 * `419` key expired
+* `422` unprocessable entity
 * `429` rate limit exceeded

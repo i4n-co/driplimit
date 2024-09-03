@@ -48,7 +48,7 @@ func (api *Server) serviceKeysList() *rpc {
 			if err := c.BodyParser(payload); err != nil {
 				return err
 			}
-			sklist, err := api.service.WithToken(token(c)).ServiceKeyList(c.Context(), *payload)
+			sklist, err := api.service.ServiceKeyList(c.Context(), *payload.WithServiceToken(token(c)))
 			if err != nil {
 				return err
 			}

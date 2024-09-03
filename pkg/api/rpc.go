@@ -1,6 +1,8 @@
 package api
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"github.com/gofiber/fiber/v2"
+)
 
 type rpcs []*rpc
 type rpc struct {
@@ -14,9 +16,9 @@ func (h *rpc) path() string {
 	return "/" + h.Namespace + "." + h.Action
 }
 
-// RegisterRPC registers an RPC endpoint into the server. It
+// registerRPC registers an RPC endpoint into the server. It
 // appends the RPC to the list of RPCs and registers the handler
-func (s *Server) RegisterRPC(router fiber.Router, rpc *rpc) {
+func (s *Server) registerRPC(router fiber.Router, rpc *rpc) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.rpcs = append(s.rpcs, rpc)

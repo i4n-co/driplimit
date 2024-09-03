@@ -35,12 +35,12 @@ func (api *Server) keysGet() *rpc {
 			},
 		},
 		Handler: func(c *fiber.Ctx) (err error) {
-			payload := new(driplimit.KeysCheckPayload)
+			payload := new(driplimit.KeyGetPayload)
 			if err := c.BodyParser(payload); err != nil {
 				return err
 			}
 
-			keyinfo, err := api.service.WithToken(token(c)).KeyCheck(c.Context(), *payload)
+			keyinfo, err := api.service.KeyGet(c.Context(), *payload.WithServiceToken(token(c)))
 			if err != nil {
 				return err
 			}

@@ -52,7 +52,7 @@ func (api *Server) keysList() *rpc {
 				return err
 			}
 
-			keylist, err := api.service.WithToken(token(c)).KeyList(c.Context(), *payload)
+			keylist, err := api.service.KeyList(c.Context(), *payload.WithServiceToken(token(c)))
 			if err != nil {
 				return err
 			}

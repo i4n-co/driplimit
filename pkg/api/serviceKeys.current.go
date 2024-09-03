@@ -30,9 +30,10 @@ func (api *Server) serviceKeysCurrent() *rpc {
 			},
 		},
 		Handler: func(c *fiber.Ctx) (err error) {
-			sk, err := api.service.WithToken(token(c)).ServiceKeyGet(c.Context(), driplimit.ServiceKeyGetPayload{
+			payload := driplimit.ServiceKeyGetPayload{
 				Token: token(c),
-			})
+			}
+			sk, err := api.service.ServiceKeyGet(c.Context(), *payload.WithServiceToken(token(c)))
 			if err != nil {
 				if err == driplimit.ErrNotFound {
 					return driplimit.ErrUnauthorized

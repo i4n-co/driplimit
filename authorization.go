@@ -54,34 +54,21 @@ func (policies Policies) Can(action PolicyAction, id string) bool {
 	return policy.Can(action)
 }
 
-// driplimitAuthorizer is an authorization wrapper. It implements the Service interface.
-type driplimitAuthorizer struct {
+// Authorizer is an authorization wrapper. It implements the Service interface.
+type Authorizer struct {
 	driplimit Service
 }
 
-// NewServiceAuthorizer wraps a Driplimit ServiceWithToken with an authorizer.
-func NewServiceAuthorizer(driplimit Service) ServiceWithToken {
-	return &driplimitAuthorizer{
+// NewAuthorizer wraps a Driplimit ServiceWithToken with an authorizer.
+func NewAuthorizer(driplimit Service) *Authorizer {
+	return &Authorizer{
 		driplimit: driplimit,
 	}
 }
 
-type driplimitAuthorizerWithToken struct {
-	*driplimitAuthorizer
-	token string
-}
-
-// WithToken returns an authorized wrapped service with a token.
-func (v *driplimitAuthorizer) WithToken(token string) Service {
-	return &driplimitAuthorizerWithToken{
-		driplimitAuthorizer: v,
-		token:               token,
-	}
-}
-
-// ContextServiceKey gets the service key from the context.
-func (a *driplimitAuthorizerWithToken) ContextServiceKey(ctx context.Context, token string) (sk *ServiceKey, err error) {
-	sk, err = a.driplimit.ServiceKeyGet(ctx, ServiceKeyGetPayload{Token: token})
+// caller gets the service key from the context.
+func (a *Authorizer) caller(ctx context.Context, payload Payload) (sk *ServiceKey, err error) {
+	sk, err = a.driplimit.ServiceKeyGet(ctx, ServiceKeyGetPayload{Token: payload.ServiceToken()})
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
 			return nil, ErrUnauthorized
@@ -91,8 +78,8 @@ func (a *driplimitAuthorizerWithToken) ContextServiceKey(ctx context.Context, to
 	return sk, nil
 }
 
-func (a *driplimitAuthorizerWithToken) KeyCheck(ctx context.Context, payload KeysCheckPayload) (key *Key, err error) {
-	sk, err := a.ContextServiceKey(ctx, a.token)
+func (a *Authorizer) KeyCheck(ctx context.Context, payload KeysCheckPayload) (key *Key, err error) {
+	sk, err := a.caller(ctx, payload)
 	if err != nil {
 		return nil, err
 	}
@@ -102,8 +89,8 @@ func (a *driplimitAuthorizerWithToken) KeyCheck(ctx context.Context, payload Key
 	return nil, ErrUnauthorized
 }
 
-func (a *driplimitAuthorizerWithToken) KeyCreate(ctx context.Context, payload KeyCreatePayload) (key *Key, token *string, err error) {
-	sk, err := a.ContextServiceKey(ctx, a.token)
+func (a *Authorizer) KeyCreate(ctx context.Context, payload KeyCreatePayload) (key *Key, token *string, err error) {
+	sk, err := a.caller(ctx, payload)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -113,8 +100,8 @@ func (a *driplimitAuthorizerWithToken) KeyCreate(ctx context.Context, payload Ke
 	return nil, nil, ErrUnauthorized
 }
 
-func (a *driplimitAuthorizerWithToken) KeyGet(ctx context.Context, payload KeyGetPayload) (key *Key, err error) {
-	sk, err := a.ContextServiceKey(ctx, a.token)
+func (a *Authorizer) KeyGet(ctx context.Context, payload KeyGetPayload) (key *Key, err error) {
+	sk, err := a.caller(ctx, payload)
 	if err != nil {
 		return nil, err
 	}
@@ -124,8 +111,8 @@ func (a *driplimitAuthorizerWithToken) KeyGet(ctx context.Context, payload KeyGe
 	return nil, ErrUnauthorized
 }
 
-func (a *driplimitAuthorizerWithToken) KeyList(ctx context.Context, payload KeyListPayload) (klist *KeyList, err error) {
-	sk, err := a.ContextServiceKey(ctx, a.token)
+func (a *Authorizer) KeyList(ctx context.Context, payload KeyListPayload) (klist *KeyList, err error) {
+	sk, err := a.caller(ctx, payload)
 	if err != nil {
 		return nil, err
 	}
@@ -135,8 +122,8 @@ func (a *driplimitAuthorizerWithToken) KeyList(ctx context.Context, payload KeyL
 	return nil, ErrUnauthorized
 }
 
-func (a *driplimitAuthorizerWithToken) KeyDelete(ctx context.Context, payload KeyDeletePayload) (err error) {
-	sk, err := a.ContextServiceKey(ctx, a.token)
+func (a *Authorizer) KeyDelete(ctx context.Context, payload KeyDeletePayload) (err error) {
+	sk, err := a.caller(ctx, payload)
 	if err != nil {
 		return err
 	}
@@ -146,8 +133,8 @@ func (a *driplimitAuthorizerWithToken) KeyDelete(ctx context.Context, payload Ke
 	return ErrUnauthorized
 }
 
-func (a *driplimitAuthorizerWithToken) KeyspaceGet(ctx context.Context, payload KeyspaceGetPayload) (keyspace *Keyspace, err error) {
-	sk, err := a.ContextServiceKey(ctx, a.token)
+func (a *Authorizer) KeyspaceGet(ctx context.Context, payload KeyspaceGetPayload) (keyspace *Keyspace, err error) {
+	sk, err := a.caller(ctx, payload)
 	if err != nil {
 		return nil, err
 	}
@@ -157,8 +144,8 @@ func (a *driplimitAuthorizerWithToken) KeyspaceGet(ctx context.Context, payload 
 	return nil, ErrUnauthorized
 }
 
-func (a *driplimitAuthorizerWithToken) KeyspaceCreate(ctx context.Context, payload KeyspaceCreatePayload) (keyspace *Keyspace, err error) {
-	sk, err := a.ContextServiceKey(ctx, a.token)
+func (a *Authorizer) KeyspaceCreate(ctx context.Context, payload KeyspaceCreatePayload) (keyspace *Keyspace, err error) {
+	sk, err := a.caller(ctx, payload)
 	if err != nil {
 		return nil, err
 	}
@@ -168,8 +155,8 @@ func (a *driplimitAuthorizerWithToken) KeyspaceCreate(ctx context.Context, paylo
 	return nil, ErrUnauthorized
 }
 
-func (a *driplimitAuthorizerWithToken) KeyspaceList(ctx context.Context, payload KeyspaceListPayload) (kslist *KeyspaceList, err error) {
-	sk, err := a.ContextServiceKey(ctx, a.token)
+func (a *Authorizer) KeyspaceList(ctx context.Context, payload KeyspaceListPayload) (kslist *KeyspaceList, err error) {
+	sk, err := a.caller(ctx, payload)
 	if err != nil {
 		return nil, err
 	}
@@ -181,8 +168,8 @@ func (a *driplimitAuthorizerWithToken) KeyspaceList(ctx context.Context, payload
 	return a.driplimit.KeyspaceList(ctx, payload)
 }
 
-func (a *driplimitAuthorizerWithToken) KeyspaceDelete(ctx context.Context, payload KeyspaceDeletePayload) (err error) {
-	sk, err := a.ContextServiceKey(ctx, a.token)
+func (a *Authorizer) KeyspaceDelete(ctx context.Context, payload KeyspaceDeletePayload) (err error) {
+	sk, err := a.caller(ctx, payload)
 	if err != nil {
 		return err
 	}
@@ -192,8 +179,8 @@ func (a *driplimitAuthorizerWithToken) KeyspaceDelete(ctx context.Context, paylo
 	return ErrUnauthorized
 }
 
-func (a *driplimitAuthorizerWithToken) ServiceKeyGet(ctx context.Context, payload ServiceKeyGetPayload) (sk *ServiceKey, err error) {
-	sk, err = a.ContextServiceKey(ctx, a.token)
+func (a *Authorizer) ServiceKeyGet(ctx context.Context, payload ServiceKeyGetPayload) (sk *ServiceKey, err error) {
+	sk, err = a.caller(ctx, payload)
 	if err != nil {
 		return nil, err
 	}
@@ -213,8 +200,8 @@ func (a *driplimitAuthorizerWithToken) ServiceKeyGet(ctx context.Context, payloa
 	return requestedServiceKey, nil
 }
 
-func (a *driplimitAuthorizerWithToken) ServiceKeyCreate(ctx context.Context, payload ServiceKeyCreatePayload) (sk *ServiceKey, err error) {
-	sk, err = a.ContextServiceKey(ctx, a.token)
+func (a *Authorizer) ServiceKeyCreate(ctx context.Context, payload ServiceKeyCreatePayload) (sk *ServiceKey, err error) {
+	sk, err = a.caller(ctx, payload)
 	if err != nil {
 		return nil, err
 	}
@@ -224,8 +211,8 @@ func (a *driplimitAuthorizerWithToken) ServiceKeyCreate(ctx context.Context, pay
 	return nil, ErrUnauthorized
 }
 
-func (a *driplimitAuthorizerWithToken) ServiceKeyList(ctx context.Context, payload ServiceKeyListPayload) (sklist *ServiceKeyList, err error) {
-	sk, err := a.ContextServiceKey(ctx, a.token)
+func (a *Authorizer) ServiceKeyList(ctx context.Context, payload ServiceKeyListPayload) (sklist *ServiceKeyList, err error) {
+	sk, err := a.caller(ctx, payload)
 	if err != nil {
 		return nil, err
 	}
@@ -235,8 +222,8 @@ func (a *driplimitAuthorizerWithToken) ServiceKeyList(ctx context.Context, paylo
 	return nil, ErrUnauthorized
 }
 
-func (a *driplimitAuthorizerWithToken) ServiceKeyDelete(ctx context.Context, payload ServiceKeyDeletePayload) (err error) {
-	sk, err := a.ContextServiceKey(ctx, a.token)
+func (a *Authorizer) ServiceKeyDelete(ctx context.Context, payload ServiceKeyDeletePayload) (err error) {
+	sk, err := a.caller(ctx, payload)
 	if err != nil {
 		return err
 	}
@@ -246,5 +233,18 @@ func (a *driplimitAuthorizerWithToken) ServiceKeyDelete(ctx context.Context, pay
 	if sk.Admin {
 		return a.driplimit.ServiceKeyDelete(ctx, payload)
 	}
+	return ErrUnauthorized
+}
+
+func (a *Authorizer) ServiceKeySetToken(ctx context.Context, payload ServiceKeySetTokenPayload) (err error) {
+	sk, err := a.caller(ctx, payload)
+	if err != nil {
+		return err
+	}
+
+	if sk.Admin || sk.SKID == payload.SKID {
+		return a.driplimit.ServiceKeySetToken(ctx, payload)
+	}
+
 	return ErrUnauthorized
 }

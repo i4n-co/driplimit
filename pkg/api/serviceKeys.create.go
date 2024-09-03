@@ -42,7 +42,7 @@ func (api *Server) serviceKeysCreate() *rpc {
 			if err := c.BodyParser(payload); err != nil {
 				return err
 			}
-			sk, err := api.service.WithToken(token(c)).ServiceKeyCreate(c.Context(), *payload)
+			sk, err := api.service.ServiceKeyCreate(c.Context(), *payload.WithServiceToken(token(c)))
 			if err != nil {
 				return err
 			}

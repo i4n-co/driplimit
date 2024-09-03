@@ -45,7 +45,7 @@ func (api *Server) keyspacesList() *rpc {
 			if err := c.BodyParser(payload); err != nil {
 				return err
 			}
-			keyspace, err := api.service.WithToken(token(c)).KeyspaceList(c.Context(), *payload)
+			keyspace, err := api.service.KeyspaceList(c.Context(), *payload.WithServiceToken(token(c)))
 			if err != nil {
 				return err
 			}

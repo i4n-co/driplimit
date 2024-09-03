@@ -17,10 +17,13 @@ import (
 // a proxy, it will use the proxy cache. If not, it will use the authoritative service.
 // If the configuration specifies async authoritative, it will wrap the authoritative
 // service with the proxy cache.
-func initService(ctx context.Context, cfg *config.Config) (driplimit.ServiceWithToken, error) {
+func initService(ctx context.Context, cfg *config.Config) (driplimit.Service, error) {
 	if cfg.IsProxy() {
-		client := client.New(cfg)
-		return driplimit.NewServiceValidator(proxycache.NewServiceProxyCache(ctx, cfg, client)), nil
+		return driplimit.NewServiceValidator(
+			proxycache.New(ctx, cfg,
+				client.New(cfg.UpstreamURL),
+			),
+		), nil
 	}
 
 	store, err := initStore(ctx, cfg)
@@ -28,10 +31,21 @@ func initService(ctx context.Context, cfg *config.Config) (driplimit.ServiceWith
 		return nil, fmt.Errorf("failed to initialize store: %w", err)
 	}
 
-	service := authoritative.NewService(store)
-	authzservice := driplimit.NewServiceAuthorizer(service)
+	if cfg.RootServiceKeyToken != "" {
+		err = store.InitRootServiceKeyToken(ctx, cfg.RootServiceKeyToken)
+		if err != nil {
+			return nil, fmt.Errorf("failed to init root service key token: %w", err)
+		}
+
+		cfg.Logger().Info("root service token successfully set", "skid", "sk_root")
+	}
+
+	authoritative := authoritative.NewService(store)
+	authzservice := driplimit.NewAuthorizer(authoritative)
 	if cfg.IsAsyncAuthoritative() {
-		authzservice = proxycache.NewServiceProxyCache(ctx, cfg, authzservice)
+		return driplimit.NewServiceValidator(
+			proxycache.New(ctx, cfg, authzservice),
+		), nil
 	}
 
 	return driplimit.NewServiceValidator(authzservice), nil

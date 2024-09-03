@@ -9,6 +9,7 @@ import (
 
 	"github.com/i4n-co/driplimit"
 	"github.com/i4n-co/driplimit/pkg/generate"
+	"github.com/mattn/go-sqlite3"
 )
 
 // ServiceKeyModel represents the database model for a service key.
@@ -48,10 +49,12 @@ func NewServiceKeyModel(sk driplimit.ServiceKey) *ServiceKeyModel {
 // CreateServiceKey creates a new service key with the given payload and returns the service key and its generated token.
 func (s *Store) CreateServiceKey(ctx context.Context, payload driplimit.ServiceKeyCreatePayload) (sk *driplimit.ServiceKey, token *string, err error) {
 	model := new(ServiceKeyModel)
-	randomToken := "sk_" + generate.Token()
-	fmt.Println("randomToken: ", randomToken, "hash: ", generate.Hash(randomToken))
+	generatedToken := "sk_" + generate.Token()
 	model.SKID = generate.IDWithPrefix("sk_")
-	model.TokenHash = generate.Hash(randomToken)
+	if payload.SKID != "" {
+		model.SKID = payload.SKID
+	}
+	model.TokenHash = generate.Hash(generatedToken)
 	model.Admin = payload.Admin
 	model.Description = payload.Description
 	model.CreatedAt = TimeNano{Time: time.Now()}
@@ -72,6 +75,13 @@ func (s *Store) CreateServiceKey(ctx context.Context, payload driplimit.ServiceK
 		)
 	`, model)
 	if err != nil {
+		// unique constraint violation
+		sqliteConstraintErr := new(sqlite3.Error)
+		if errors.As(err, sqliteConstraintErr) {
+			if sqliteConstraintErr.ExtendedCode == sqlite3.ErrConstraintPrimaryKey {
+				return nil, nil, driplimit.ErrItemAlreadyExists("service key")
+			}
+		}
 		return nil, nil, fmt.Errorf("failed to insert service key: %w", err)
 	}
 
@@ -83,7 +93,7 @@ func (s *Store) CreateServiceKey(ctx context.Context, payload driplimit.ServiceK
 	sk = model.ServiceKey()
 	sk.KeyspacesPolicies = payload.KeyspacesPolicies
 
-	return sk, &randomToken, nil
+	return sk, &generatedToken, nil
 }
 
 // GetServiceKey returns a service key based on the given payload and populates the keyspace policies.
@@ -175,4 +185,45 @@ func (s *Store) DeleteServiceKey(ctx context.Context, payload driplimit.ServiceK
 	}
 
 	return tx.Commit()
+}
+
+// SetServiceKeyToken sets a new service key token
+func (s *Store) SetServiceKeyToken(ctx context.Context, payload driplimit.ServiceKeySetTokenPayload) (err error) {
+	model := new(ServiceKeyModel)
+	model.SKID = payload.SKID
+	model.TokenHash = generate.Hash(payload.Token)
+
+	res, err := s.db.NamedExecContext(ctx, `
+		UPDATE service_keys
+		SET token_hash = :token_hash
+		WHERE skid = :skid
+	`, model)
+	if err != nil {
+		return fmt.Errorf("failed to update service key token: %w", err)
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rows == 0 {
+		return driplimit.ErrItemNotFound("service key")
+	}
+
+	return nil
+}
+
+func (s *Store) InitRootServiceKeyToken(ctx context.Context, token string) error {
+	_, _, err := s.CreateServiceKey(ctx, driplimit.ServiceKeyCreatePayload{
+		SKID:        "sk_root",
+		Admin:       true,
+		Description: "service token automatically created at startup",
+	})
+	if err != nil && !errors.Is(err, driplimit.ErrAlreadyExists) {
+		return fmt.Errorf("failed to create root service key: %w", err)
+	}
+
+	return s.SetServiceKeyToken(ctx, driplimit.ServiceKeySetTokenPayload{
+		SKID:  "sk_root",
+		Token: token,
+	})
 }

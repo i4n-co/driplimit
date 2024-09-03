@@ -55,6 +55,7 @@ type Config struct {
 	ServiceKeysCacheSize int           `env:"SERVICE_KEYS_CACHE_SIZE, default=2048" description:"maximum number of service keys in the cache"`
 	UpstreamTimeout      time.Duration `env:"UPSTREAM_TIMEOUT, default=5s" description:"timeout for upstream requests"`
 	UpstreamURL          string        `env:"UPSTREAM_URL" description:"upstream URL for proxy mode or SDK client"`
+	RootServiceKeyToken  string        `env:"ROOT_SERVICE_KEY_TOKEN" description:"create a root service key at startup with this token"`
 
 	logger *slog.Logger
 }

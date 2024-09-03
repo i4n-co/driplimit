@@ -13,7 +13,6 @@ import (
 type Key struct {
 	KID       string     `json:"kid"`
 	KSID      string     `json:"ksid"`
-	TokenHash string     `json:"-"`
 	Token     string     `json:"token,omitempty"`
 	LastUsed  time.Time  `json:"last_used"`
 	ExpiresAt time.Time  `json:"expires_at"`
@@ -104,6 +103,7 @@ func (k *Key) Expired() bool {
 
 // KeyCreatePayload is the payload for creating a key.
 type KeyCreatePayload struct {
+	*payload
 	KSID      string           `json:"ksid" validate:"required" description:"The id of the keyspace to which the key belongs to"`
 	ExpiresIn Milliseconds     `json:"expires_in" description:"The duration in milliseconds after which the key expires"`
 	ExpiresAt time.Time        `json:"expires_at" description:"The time at which the key expires (expires_at takes precedence over expires_in)"`
@@ -112,6 +112,10 @@ type KeyCreatePayload struct {
 
 // Validate validates the key create payload.
 func (k *KeyCreatePayload) Validate(validator *validator.Validate) error {
+	if k.ExpiresIn.Duration == 0 && k.ExpiresAt.IsZero() {
+		return ErrInvalidExpiration
+	}
+
 	if k.ExpiresIn.Duration > 0 && k.ExpiresAt.IsZero() {
 		k.ExpiresAt = time.Now().Add(k.ExpiresIn.Duration)
 	}
@@ -119,8 +123,17 @@ func (k *KeyCreatePayload) Validate(validator *validator.Validate) error {
 	return validator.Struct(k)
 }
 
+// WithServiceToken adds authentication infos to payload
+func (k *KeyCreatePayload) WithServiceToken(token string) *KeyCreatePayload {
+	k.payload = &payload{
+		serviceToken: token,
+	}
+	return k
+}
+
 // KeyCheckPayload is the payload for checking a key.
 type KeysCheckPayload struct {
+	*payload
 	KSID  string `json:"ksid" validate:"required" description:"The id of the keyspace to which the key belongs to"`
 	Token string `json:"token" validate:"required" description:"The token to check"`
 }
@@ -130,8 +143,18 @@ func (k *KeysCheckPayload) Validate(validator *validator.Validate) error {
 	return validator.Struct(k)
 }
 
+// WithServiceToken adds authentication infos to payload
+func (k *KeysCheckPayload) WithServiceToken(token string) *KeysCheckPayload {
+	k.payload = &payload{
+		serviceToken: token,
+	}
+	return k
+}
+
 // KeyGetPayload is the payload for getting a key.
 type KeyGetPayload struct {
+	*payload
+
 	KSID  string `json:"ksid" validate:"required" description:"The id of the keyspace to which the key belongs to"`
 	KID   string `json:"kid" description:"The id of the key to get (kid takes precedence over token if both are provided)"`
 	Token string `json:"token" description:"The token of the key to get"`
@@ -147,6 +170,14 @@ func (k *KeyGetPayload) Validate(validator *validator.Validate) error {
 		return ErrInvalidPayload
 	}
 	return nil
+}
+
+// WithServiceToken adds authentication infos to payload
+func (k *KeyGetPayload) WithServiceToken(token string) *KeyGetPayload {
+	k.payload = &payload{
+		serviceToken: token,
+	}
+	return k
 }
 
 // GetKeyBy returns the field and the corresponding value by which the key should be retrieved.
@@ -168,6 +199,8 @@ type KeyList struct {
 
 // KeyspaceListPayload represents the payload for listing keyspaces.
 type KeyListPayload struct {
+	*payload
+
 	List ListPayload `json:"list" description:"The list options"`
 	KSID string      `json:"ksid" validate:"required" description:"The id of the keyspace to which the keys belong to"`
 }
@@ -181,8 +214,18 @@ func (kl *KeyListPayload) Validate(validator *validator.Validate) error {
 	return validator.Struct(kl)
 }
 
+// WithServiceToken adds authentication infos to payload
+func (k *KeyListPayload) WithServiceToken(token string) *KeyListPayload {
+	k.payload = &payload{
+		serviceToken: token,
+	}
+	return k
+}
+
 // KeyDeletePayload is the payload for deleting a key.
 type KeyDeletePayload struct {
+	*payload
+
 	KSID string `json:"ksid" validate:"required" description:"The id of the keyspace to which the key belongs to"`
 	KID  string `json:"kid" validate:"required" description:"The id of the key to delete"`
 }
@@ -190,4 +233,12 @@ type KeyDeletePayload struct {
 // Validate validates the key get payload.
 func (k *KeyDeletePayload) Validate(validator *validator.Validate) error {
 	return validator.Struct(k)
+}
+
+// WithServiceToken adds authentication infos to payload
+func (k *KeyDeletePayload) WithServiceToken(token string) *KeyDeletePayload {
+	k.payload = &payload{
+		serviceToken: token,
+	}
+	return k
 }
