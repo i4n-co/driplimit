@@ -5,74 +5,89 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log/slog"
+	"io"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/i4n-co/driplimit"
-	"github.com/i4n-co/driplimit/pkg/config"
 )
 
-// httpClient is a driplimit http client that implements the driplimit service
-type httpClient struct {
-	client *http.Client
-	cfg    *config.Config
-	logger *slog.Logger
+// HTTP is a driplimit http client that implements the driplimit service
+type HTTP struct {
+	upstreamURL     string
+	sendRequestFunc func(req *http.Request) (*http.Response, error)
+	serviceToken    string
+}
+
+func (http *HTTP) clone() *HTTP {
+	return &HTTP{
+		upstreamURL:     http.upstreamURL,
+		sendRequestFunc: http.sendRequestFunc,
+		serviceToken:    http.serviceToken,
+	}
 }
 
 // New creates a new driplimit http client
-func New(cfg *config.Config) driplimit.ServiceWithToken {
+func New(upstreamURL string, timeout ...time.Duration) *HTTP {
+	timeoutDuration := 5 * time.Second
+	if len(timeout) > 0 && timeout[0] > 0 {
+		timeoutDuration = timeout[0]
+	}
 	transport := &http.Transport{
-		Dial: (&net.Dialer{
-			Timeout: cfg.UpstreamTimeout,
-		}).Dial,
-		TLSHandshakeTimeout: cfg.UpstreamTimeout,
+		DialContext: (&net.Dialer{
+			Timeout: timeoutDuration,
+		}).DialContext,
+		TLSHandshakeTimeout: timeoutDuration,
 	}
-
-	return &httpClient{
-		cfg: cfg,
-		client: &http.Client{
-			Timeout:   cfg.UpstreamTimeout,
-			Transport: transport,
-		},
-		logger: cfg.Logger().With("component", "client"),
+	client := &http.Client{
+		Timeout:   timeoutDuration,
+		Transport: transport,
+	}
+	return &HTTP{
+		upstreamURL:     upstreamURL,
+		sendRequestFunc: client.Do,
 	}
 }
 
-// httpClientWithToken is a driplimit http client that implements the driplimit service with a token
-type httpClientWithToken struct {
-	*httpClient
-	token string
+// WithSendRequestFunc replace the default client http Do func by a custom one.
+// This method is mainly used for tests
+func (h *HTTP) WithSendRequestFunc(f func(req *http.Request) (*http.Response, error)) *HTTP {
+	nh := h.clone()
+	nh.sendRequestFunc = f
+	return nh
 }
 
-// WithToken creates a new driplimit http client instance with a token
-func (c *httpClient) WithToken(token string) driplimit.Service {
-	return &httpClientWithToken{
-		httpClient: c,
-		token:      token,
-	}
+// WithServiceToken sets a default service token used in all requests
+func (h *HTTP) WithServiceToken(token string) *HTTP {
+	nh := h.clone()
+	nh.serviceToken = token
+	return nh
 }
 
 // do sends a request to the upstream server
-func (c *httpClientWithToken) do(ctx context.Context, action string, payload any, result any) error {
-	jsn, err := json.Marshal(payload)
+func do[K any](ctx context.Context, c *HTTP, action string, payload driplimit.Payload, target ...K) (err error) {
+	buf := new(bytes.Buffer)
+	err = json.NewEncoder(buf).Encode(payload)
 	if err != nil {
-		return fmt.Errorf("failed to marshal payload: %w", err)
+		return fmt.Errorf("failed to encode payload: %w", err)
 	}
 
-	req, err := http.NewRequest("POST", c.cfg.UpstreamURL+action, bytes.NewBuffer(jsn))
+	req, err := http.NewRequestWithContext(ctx, "POST", c.upstreamURL+action, buf)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
-
-	req = req.WithContext(ctx)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "driplimit")
-	if c.token != "" {
-		req.Header.Set("Authorization", "Bearer "+c.token)
+	if c.serviceToken != "" {
+		req.Header.Set("Authorization", "Bearer "+c.serviceToken)
 	}
 
-	resp, err := c.client.Do(req)
+	if payload != nil && payload.ServiceToken() != "" {
+		req.Header.Set("Authorization", "Bearer "+payload.ServiceToken())
+	}
+
+	resp, err := c.sendRequestFunc(req)
 	if err != nil {
 		return fmt.Errorf("failed to send request: %w", err)
 	}
@@ -82,83 +97,156 @@ func (c *httpClientWithToken) do(ctx context.Context, action string, payload any
 		return driplimit.ErrFromHTTPCode(resp.StatusCode)
 	}
 
-	err = json.NewDecoder(resp.Body).Decode(result)
+	bodybuf := new(bytes.Buffer)
+	io.Copy(bodybuf, resp.Body)
+
+	r := bytes.NewReader(bodybuf.Bytes())
+	b, err := io.ReadAll(r)
 	if err != nil {
-		return fmt.Errorf("failed to decode response: %w", err)
+		return err
+	}
+	fmt.Println(string(b))
+
+	r.Seek(0, 0)
+	if len(target) > 0 {
+		err = json.NewDecoder(r).Decode(target[0])
+		if err != nil {
+			return fmt.Errorf("failed to decode response: %w", err)
+		}
 	}
 
 	return nil
 }
 
-func (c *httpClientWithToken) KeyCheck(ctx context.Context, payload driplimit.KeysCheckPayload) (key *driplimit.Key, err error) {
+func (c *HTTP) KeyCheck(ctx context.Context, payload driplimit.KeysCheckPayload) (key *driplimit.Key, err error) {
 	key = new(driplimit.Key)
-	err = c.do(ctx, "/v1/keys.check", payload, key)
-	return key, err
+	err = do(ctx, c, "/v1/keys.check", payload, key)
+	if err != nil {
+		return nil, err
+	}
+	return key, nil
 }
 
-func (c *httpClientWithToken) KeyCreate(ctx context.Context, payload driplimit.KeyCreatePayload) (key *driplimit.Key, token *string, err error) {
+func (c *HTTP) KeyCreate(ctx context.Context, payload driplimit.KeyCreatePayload) (key *driplimit.Key, err error) {
 	key = new(driplimit.Key)
-	err = c.do(ctx, "/v1/keys.create", payload, key)
-	return key, &key.Token, err
+	err = do(ctx, c, "/v1/keys.create", payload, key)
+	if err != nil {
+		return nil, err
+	}
+	return key, nil
 }
 
-func (c *httpClientWithToken) KeyGet(ctx context.Context, payload driplimit.KeyGetPayload) (key *driplimit.Key, err error) {
+func (c *HTTP) KeyGet(ctx context.Context, payload driplimit.KeyGetPayload) (key *driplimit.Key, err error) {
 	key = new(driplimit.Key)
-	err = c.do(ctx, "/v1/keys.get", payload, key)
-	return key, err
+	err = do(ctx, c, "/v1/keys.get", payload, key)
+	if err != nil {
+		return nil, err
+	}
+	return key, nil
 }
 
-func (c *httpClientWithToken) KeyList(ctx context.Context, payload driplimit.KeyListPayload) (klist *driplimit.KeyList, err error) {
+func (c *HTTP) KeyList(ctx context.Context, payload driplimit.KeyListPayload) (klist *driplimit.KeyList, err error) {
 	klist = new(driplimit.KeyList)
-	err = c.do(ctx, "/v1/keys.list", payload, klist)
-	return klist, err
+	err = do(ctx, c, "/v1/keys.list", payload, klist)
+	if err != nil {
+		return nil, err
+	}
+	return klist, nil
 }
 
-func (c *httpClientWithToken) KeyDelete(ctx context.Context, payload driplimit.KeyDeletePayload) (err error) {
-	return c.do(ctx, "/v1/keys.delete", payload, nil)
+func (c *HTTP) KeyDelete(ctx context.Context, payload driplimit.KeyDeletePayload) (err error) {
+	err = do[driplimit.Key](ctx, c, "/v1/keys.delete", payload)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func (c *httpClientWithToken) KeyspaceGet(ctx context.Context, payload driplimit.KeyspaceGetPayload) (keyspace *driplimit.Keyspace, err error) {
+func (c *HTTP) KeyspaceGet(ctx context.Context, payload driplimit.KeyspaceGetPayload) (keyspace *driplimit.Keyspace, err error) {
 	keyspace = new(driplimit.Keyspace)
-	err = c.do(ctx, "/v1/keyspaces.get", payload, keyspace)
-	return keyspace, err
+	err = do(ctx, c, "/v1/keyspaces.get", payload, keyspace)
+	if err != nil {
+		return nil, err
+	}
+	return keyspace, nil
 }
 
-func (c *httpClientWithToken) KeyspaceCreate(ctx context.Context, payload driplimit.KeyspaceCreatePayload) (keyspace *driplimit.Keyspace, err error) {
+func (c *HTTP) KeyspaceCreate(ctx context.Context, payload driplimit.KeyspaceCreatePayload) (keyspace *driplimit.Keyspace, err error) {
 	keyspace = new(driplimit.Keyspace)
-	err = c.do(ctx, "/v1/keyspaces.create", payload, keyspace)
-	return keyspace, err
+	err = do(ctx, c, "/v1/keyspaces.create", payload, keyspace)
+	if err != nil {
+		return nil, err
+	}
+	return keyspace, nil
 }
 
-func (c *httpClientWithToken) KeyspaceList(ctx context.Context, payload driplimit.KeyspaceListPayload) (kslist *driplimit.KeyspaceList, err error) {
+func (c *HTTP) KeyspaceList(ctx context.Context, payload driplimit.KeyspaceListPayload) (kslist *driplimit.KeyspaceList, err error) {
 	kslist = new(driplimit.KeyspaceList)
-	err = c.do(ctx, "/v1/keyspaces.list", payload, kslist)
-	return kslist, err
+	err = do(ctx, c, "/v1/keyspaces.list", payload, kslist)
+	if err != nil {
+		return nil, err
+	}
+	return kslist, nil
 }
 
-func (c *httpClientWithToken) KeyspaceDelete(ctx context.Context, payload driplimit.KeyspaceDeletePayload) (err error) {
-	return c.do(ctx, "/v1/keyspaces.delete", payload, nil)
+func (c *HTTP) KeyspaceDelete(ctx context.Context, payload driplimit.KeyspaceDeletePayload) (err error) {
+	err = do(ctx, c, "/v1/keyspaces.delete", payload, make(map[any]any))
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // ServiceKeyGet returns a service key based on the given payload
-func (c *httpClientWithToken) ServiceKeyGet(ctx context.Context, payload driplimit.ServiceKeyGetPayload) (sk *driplimit.ServiceKey, err error) {
+func (c *HTTP) ServiceKeyCurrent(ctx context.Context) (sk *driplimit.ServiceKey, err error) {
 	sk = new(driplimit.ServiceKey)
-	err = c.do(ctx, "/v1/serviceKeys.get", payload, sk)
-	return sk, err
+	err = do(ctx, c, "/v1/serviceKeys.current", nil, sk)
+	if err != nil {
+		return nil, err
+	}
+	return sk, nil
 }
 
-func (c *httpClientWithToken) ServiceKeyCreate(ctx context.Context, payload driplimit.ServiceKeyCreatePayload) (sk *driplimit.ServiceKey, err error) {
+// ServiceKeyGet returns a service key based on the given payload
+func (c *HTTP) ServiceKeyGet(ctx context.Context, payload driplimit.ServiceKeyGetPayload) (sk *driplimit.ServiceKey, err error) {
 	sk = new(driplimit.ServiceKey)
-	err = c.do(ctx, "/v1/serviceKeys.create", payload, sk)
-	return sk, err
+	err = do(ctx, c, "/v1/serviceKeys.get", payload, sk)
+	if err != nil {
+		return nil, err
+	}
+	return sk, nil
 }
 
-func (c *httpClientWithToken) ServiceKeyList(ctx context.Context, payload driplimit.ServiceKeyListPayload) (sklist *driplimit.ServiceKeyList, err error) {
+func (c *HTTP) ServiceKeyCreate(ctx context.Context, payload driplimit.ServiceKeyCreatePayload) (sk *driplimit.ServiceKey, err error) {
+	sk = new(driplimit.ServiceKey)
+	err = do(ctx, c, "/v1/serviceKeys.create", payload, sk)
+	if err != nil {
+		return nil, err
+	}
+	return sk, nil
+}
+
+func (c *HTTP) ServiceKeyList(ctx context.Context, payload driplimit.ServiceKeyListPayload) (sklist *driplimit.ServiceKeyList, err error) {
 	sklist = new(driplimit.ServiceKeyList)
-	err = c.do(ctx, "/v1/serviceKeys.list", payload, sklist)
-	return sklist, err
+	err = do(ctx, c, "/v1/serviceKeys.list", payload, sklist)
+	if err != nil {
+		return nil, err
+	}
+	return sklist, nil
 }
 
-func (c *httpClientWithToken) ServiceKeyDelete(ctx context.Context, payload driplimit.ServiceKeyDeletePayload) (err error) {
-	return c.do(ctx, "/v1/serviceKeys.delete", payload, nil)
+func (c *HTTP) ServiceKeyDelete(ctx context.Context, payload driplimit.ServiceKeyDeletePayload) (err error) {
+	err = do(ctx, c, "/v1/serviceKeys.delete", payload, make(map[any]any))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *HTTP) ServiceKeySetToken(ctx context.Context, payload driplimit.ServiceKeySetTokenPayload) (err error) {
+	err = do(ctx, c, "/v1/serviceKeys.set_token", payload, make(map[any]any))
+	if err != nil {
+		return err
+	}
+	return nil
 }

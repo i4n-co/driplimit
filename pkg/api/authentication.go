@@ -14,7 +14,7 @@ func authenticate() func(c *fiber.Ctx) error {
 		if auth == "" {
 			return driplimit.ErrUnauthorized
 		}
-
+	
 		c.Locals("token", strings.TrimPrefix(auth, "Bearer "))
 		return c.Next()
 	}

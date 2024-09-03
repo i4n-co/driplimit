@@ -3,13 +3,12 @@ package driplimit
 import (
 	"context"
 	"errors"
-	"sync"
 )
 
 // Service is the main driplimit service interface.
 type Service interface {
 	KeyCheck(ctx context.Context, payload KeysCheckPayload) (key *Key, err error)
-	KeyCreate(ctx context.Context, payload KeyCreatePayload) (key *Key, token *string, err error)
+	KeyCreate(ctx context.Context, payload KeyCreatePayload) (key *Key, err error)
 	KeyGet(ctx context.Context, payload KeyGetPayload) (key *Key, err error)
 	KeyList(ctx context.Context, payload KeyListPayload) (klist *KeyList, err error)
 	KeyDelete(ctx context.Context, payload KeyDeletePayload) (err error)
@@ -23,11 +22,7 @@ type Service interface {
 	ServiceKeyCreate(ctx context.Context, payload ServiceKeyCreatePayload) (sk *ServiceKey, err error)
 	ServiceKeyList(ctx context.Context, payload ServiceKeyListPayload) (sklist *ServiceKeyList, err error)
 	ServiceKeyDelete(ctx context.Context, payload ServiceKeyDeletePayload) (err error)
-}
-
-// ServiceWithToken is the service interface with a token.
-type ServiceWithToken interface {
-	WithToken(token string) Service
+	ServiceKeySetToken(ctx context.Context, payload ServiceKeySetTokenPayload) (err error)
 }
 
 var (
@@ -35,6 +30,8 @@ var (
 	ErrNotFound = errors.New("not found")
 	// ErrInvalidPayload is returned when the payload is invalid.
 	ErrInvalidPayload = errors.New("invalid payload")
+	// ErrInvalidExpiration is returned when the payload contains an empty or invalid expiration
+	ErrInvalidExpiration = errors.New("invalid expiration")
 	// ErrRateLimitExceeded is returned when the rate limit is exceeded.
 	ErrRateLimitExceeded = errors.New("rate limit exceeded")
 	// ErrKeyExpired is returned when the key is expired.
@@ -48,14 +45,15 @@ var (
 )
 
 // errHTTPCode is a map of HTTP status codes mapped to known errors.
-var errHTTPCode = map[int]error{
-	400: ErrInvalidPayload,
-	401: ErrUnauthorized,
-	403: ErrCannotDeleteItself,
-	404: ErrNotFound,
-	409: ErrAlreadyExists,
-	419: ErrKeyExpired,
-	429: ErrRateLimitExceeded,
+var errHTTPCode = map[error]int{
+	ErrInvalidPayload:     400,
+	ErrUnauthorized:       401,
+	ErrCannotDeleteItself: 403,
+	ErrNotFound:           404,
+	ErrAlreadyExists:      409,
+	ErrKeyExpired:         419,
+	ErrRateLimitExceeded:  429,
+	ErrInvalidExpiration:  460,
 }
 
 // ErrItemNotFound is returned when the requested item is not found.
@@ -86,28 +84,20 @@ func (e ErrItemAlreadyExists) Unwrap() error {
 	return ErrAlreadyExists
 }
 
-// invertedErrHTTPCode is a map of errors mapped to their HTTP status codes.
-var invertedErrHTTPCode = new(sync.Map)
-
 // ErrFromHTTPCode returns an error based on the given HTTP status code.
 func ErrFromHTTPCode(code int) error {
-	if err, ok := errHTTPCode[code]; ok {
-		return err
+	for err, cde := range errHTTPCode {
+		if cde == code {
+			return err
+		}
 	}
 	return nil
 }
 
 // HTTPCodeFromErr returns an HTTP status code based on the given error.
 func HTTPCodeFromErr(err error) int {
-	entry, ok := invertedErrHTTPCode.Load(err)
-	if ok {
-		if code, ok := entry.(int); ok {
-			return code
-		}
-	}
-	for code, e := range errHTTPCode {
+	for e, code := range errHTTPCode {
 		if errors.Is(err, e) {
-			invertedErrHTTPCode.Store(e, code)
 			return code
 		}
 	}

@@ -24,7 +24,7 @@ func (api *Server) keysDelete() *rpc {
 				return err
 			}
 
-			err = api.service.WithToken(token(c)).KeyDelete(c.Context(), *payload)
+			err = api.service.KeyDelete(c.Context(), *payload.WithServiceToken(token(c)))
 			if err != nil {
 				return err
 			}

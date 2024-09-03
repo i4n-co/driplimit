@@ -40,11 +40,12 @@ func (api *Server) keysCheck() *rpc {
 				return err
 			}
 
-			keyinfo, err := api.service.WithToken(token(c)).KeyCheck(c.Context(), *payload)
+			keyinfo, err := api.service.KeyCheck(c.Context(), *payload.WithServiceToken(token(c)))
 			if err != nil {
 				return err
 			}
 			return c.JSON(keyinfo)
 		},
+		
 	}
 }

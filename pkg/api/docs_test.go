@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/i4n-co/driplimit/pkg/config"
@@ -17,7 +16,6 @@ func TestGenerateDocs(t *testing.T) {
 	docs, err := api.GenerateDocs()
 	assert.NoError(t, err)
 
-	jsn, err := json.MarshalIndent(docs, "", "  ")
+	_, err = json.MarshalIndent(docs, "", "  ")
 	assert.NoError(t, err)
-	fmt.Printf("%s\n", string(jsn))
 }

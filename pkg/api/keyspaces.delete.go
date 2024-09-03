@@ -22,7 +22,7 @@ func (api *Server) keyspacesDelete() *rpc {
 			if err := c.BodyParser(payload); err != nil {
 				return err
 			}
-			err = api.service.WithToken(token(c)).KeyspaceDelete(c.Context(), *payload)
+			err = api.service.KeyspaceDelete(c.Context(), *payload.WithServiceToken(token(c)))
 			if err != nil {
 				return err
 			}

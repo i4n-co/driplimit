@@ -22,7 +22,7 @@ func (api *Server) serviceKeysDelete() *rpc {
 			if err := c.BodyParser(payload); err != nil {
 				return err
 			}
-			return api.service.WithToken(token(c)).ServiceKeyDelete(c.Context(), *payload)
+			return api.service.ServiceKeyDelete(c.Context(), *payload.WithServiceToken(token(c)))
 		},
 	}
 }

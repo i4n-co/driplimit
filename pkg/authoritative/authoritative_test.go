@@ -38,7 +38,7 @@ func TestRateLimit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, token, err := app.KeyCreate(ctx, driplimit.KeyCreatePayload{
+	k, err := app.KeyCreate(ctx, driplimit.KeyCreatePayload{
 		KSID:      ks.KSID,
 		ExpiresAt: time.Now().Add(time.Hour * 24 * 30 * 12 * 10),
 		Ratelimit: driplimit.RatelimitPayload{
@@ -50,20 +50,21 @@ func TestRateLimit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	token := k.Token
 
-	key, err := app.KeyGet(ctx, driplimit.KeyGetPayload{KSID: ks.KSID, Token: *token})
+	key, err := app.KeyGet(ctx, driplimit.KeyGetPayload{KSID: ks.KSID, Token: k.Token})
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.Equal(t, int64(100), key.Ratelimit.State.Remaining)
 	if key.Ratelimit.State.Remaining > 0 {
-		_, err = app.KeyCheck(ctx, driplimit.KeysCheckPayload{KSID: key.KSID, Token: *token})
+		_, err = app.KeyCheck(ctx, driplimit.KeysCheckPayload{KSID: key.KSID, Token: token})
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	key, err = app.KeyGet(ctx, driplimit.KeyGetPayload{KSID: ks.KSID, Token: *token})
+	key, err = app.KeyGet(ctx, driplimit.KeyGetPayload{KSID: ks.KSID, Token: token})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,20 +72,20 @@ func TestRateLimit(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 
-	key, err = app.KeyGet(ctx, driplimit.KeyGetPayload{KSID: ks.KSID, Token: *token})
+	key, err = app.KeyGet(ctx, driplimit.KeyGetPayload{KSID: ks.KSID, Token: token})
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.Equal(t, int64(100), key.Ratelimit.State.Remaining)
 
-	_, token, err = app.KeyCreate(ctx, driplimit.KeyCreatePayload{
+	key, err = app.KeyCreate(ctx, driplimit.KeyCreatePayload{
 		KSID:      ks.KSID,
 		ExpiresAt: time.Now(),
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	key, _ = app.KeyGet(ctx, driplimit.KeyGetPayload{KSID: ks.KSID, Token: *token})
+	key, _ = app.KeyGet(ctx, driplimit.KeyGetPayload{KSID: ks.KSID, Token: key.Token})
 	assert.True(t, key.Expired())
 }
 
@@ -107,7 +108,7 @@ func TestUnconfiguredRateLimit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	key, token, err := app.KeyCreate(ctx, driplimit.KeyCreatePayload{
+	key, err := app.KeyCreate(ctx, driplimit.KeyCreatePayload{
 		KSID:      ks.KSID,
 		ExpiresAt: time.Now().Add(time.Hour * 24 * 30 * 12 * 10),
 	})
@@ -115,6 +116,6 @@ func TestUnconfiguredRateLimit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = app.KeyCheck(ctx, driplimit.KeysCheckPayload{KSID: key.KSID, Token: *token})
+	_, err = app.KeyCheck(ctx, driplimit.KeysCheckPayload{KSID: key.KSID, Token: key.Token})
 	assert.NoError(t, err)
 }

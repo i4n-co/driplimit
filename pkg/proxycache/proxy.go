@@ -16,13 +16,13 @@ import (
 type proxyCache struct {
 	cache         *cache
 	refreshOrders chan refreshOrder
-	upstream      driplimit.ServiceWithToken
+	upstream      driplimit.Service
 	cfg           *config.Config
 	logger        *slog.Logger
 }
 
-// NewServiceProxyCache creates a new proxy cache service.
-func NewServiceProxyCache(ctx context.Context, cfg *config.Config, upstream driplimit.ServiceWithToken) driplimit.ServiceWithToken {
+// New creates a new proxy cache service.
+func New(ctx context.Context, cfg *config.Config, upstream driplimit.Service) *proxyCache {
 	proxy := &proxyCache{
 		upstream:      upstream,
 		cache:         newCache(cfg),
@@ -36,25 +36,11 @@ func NewServiceProxyCache(ctx context.Context, cfg *config.Config, upstream drip
 	return proxy
 }
 
-// proxyCacheWithToken is a proxy cache with a token.
-type proxyCacheWithToken struct {
-	*proxyCache
-	token string
-}
-
-// WithToken creates a new proxy cache with a token.
-func (proxy *proxyCache) WithToken(token string) driplimit.Service {
-	return &proxyCacheWithToken{
-		proxyCache: proxy,
-		token:      token,
-	}
-}
-
 // KeyCheck checks if a key is valid and predicts the next check.
 // this method tries to be as asynchronous as possible.
-func (proxy *proxyCacheWithToken) KeyCheck(ctx context.Context, payload driplimit.KeysCheckPayload) (key *driplimit.Key, err error) {
+func (proxy *proxyCache) KeyCheck(ctx context.Context, payload driplimit.KeysCheckPayload) (key *driplimit.Key, err error) {
 	sk, err := proxy.ServiceKeyGet(ctx, driplimit.ServiceKeyGetPayload{
-		Token: generate.Hash(proxy.token),
+		Token: generate.Hash(payload.ServiceToken()),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get service key: %w", err)
@@ -66,9 +52,8 @@ func (proxy *proxyCacheWithToken) KeyCheck(ctx context.Context, payload driplimi
 		return nil, driplimit.ErrUnauthorized
 	}
 
-	refreshOrder := refreshOrder{payload, proxy.token}
+	refreshOrder := refreshOrder{payload}
 	refreshErr, _ := proxy.cache.Errors.Get(refreshOrder.CacheKey())
-
 	if errors.Is(refreshErr, driplimit.ErrKeyExpired) {
 		return nil, driplimit.ErrKeyExpired
 	}
@@ -110,59 +95,63 @@ func (proxy *proxyCacheWithToken) KeyCheck(ctx context.Context, payload driplimi
 	return key, nil
 }
 
-func (proxy *proxyCacheWithToken) KeyCreate(ctx context.Context, payload driplimit.KeyCreatePayload) (key *driplimit.Key, token *string, err error) {
-	return proxy.upstream.WithToken(proxy.token).KeyCreate(ctx, payload)
+func (proxy *proxyCache) KeyCreate(ctx context.Context, payload driplimit.KeyCreatePayload) (key *driplimit.Key, err error) {
+	return proxy.upstream.KeyCreate(ctx, payload)
 }
 
-func (proxy *proxyCacheWithToken) KeyGet(ctx context.Context, payload driplimit.KeyGetPayload) (key *driplimit.Key, err error) {
-	return proxy.upstream.WithToken(proxy.token).KeyGet(ctx, payload)
+func (proxy *proxyCache) KeyGet(ctx context.Context, payload driplimit.KeyGetPayload) (key *driplimit.Key, err error) {
+	return proxy.upstream.KeyGet(ctx, payload)
 }
 
-func (proxy *proxyCacheWithToken) KeyList(ctx context.Context, payload driplimit.KeyListPayload) (klist *driplimit.KeyList, err error) {
-	return proxy.upstream.WithToken(proxy.token).KeyList(ctx, payload)
+func (proxy *proxyCache) KeyList(ctx context.Context, payload driplimit.KeyListPayload) (klist *driplimit.KeyList, err error) {
+	return proxy.upstream.KeyList(ctx, payload)
 }
 
-func (proxy *proxyCacheWithToken) KeyDelete(ctx context.Context, payload driplimit.KeyDeletePayload) (err error) {
-	return proxy.upstream.WithToken(proxy.token).KeyDelete(ctx, payload)
+func (proxy *proxyCache) KeyDelete(ctx context.Context, payload driplimit.KeyDeletePayload) (err error) {
+	return proxy.upstream.KeyDelete(ctx, payload)
 }
 
-func (proxy *proxyCacheWithToken) KeyspaceCreate(ctx context.Context, payload driplimit.KeyspaceCreatePayload) (keyspace *driplimit.Keyspace, err error) {
-	return proxy.upstream.WithToken(proxy.token).KeyspaceCreate(ctx, payload)
+func (proxy *proxyCache) KeyspaceCreate(ctx context.Context, payload driplimit.KeyspaceCreatePayload) (keyspace *driplimit.Keyspace, err error) {
+	return proxy.upstream.KeyspaceCreate(ctx, payload)
 }
 
-func (proxy *proxyCacheWithToken) KeyspaceGet(ctx context.Context, payload driplimit.KeyspaceGetPayload) (keyspace *driplimit.Keyspace, err error) {
-	return proxy.upstream.WithToken(proxy.token).KeyspaceGet(ctx, payload)
+func (proxy *proxyCache) KeyspaceGet(ctx context.Context, payload driplimit.KeyspaceGetPayload) (keyspace *driplimit.Keyspace, err error) {
+	return proxy.upstream.KeyspaceGet(ctx, payload)
 }
 
-func (proxy *proxyCacheWithToken) KeyspaceList(ctx context.Context, payload driplimit.KeyspaceListPayload) (kslist *driplimit.KeyspaceList, err error) {
-	return proxy.upstream.WithToken(proxy.token).KeyspaceList(ctx, payload)
+func (proxy *proxyCache) KeyspaceList(ctx context.Context, payload driplimit.KeyspaceListPayload) (kslist *driplimit.KeyspaceList, err error) {
+	return proxy.upstream.KeyspaceList(ctx, payload)
 }
 
-func (proxy *proxyCacheWithToken) KeyspaceDelete(ctx context.Context, payload driplimit.KeyspaceDeletePayload) (err error) {
-	return proxy.upstream.WithToken(proxy.token).KeyspaceDelete(ctx, payload)
+func (proxy *proxyCache) KeyspaceDelete(ctx context.Context, payload driplimit.KeyspaceDeletePayload) (err error) {
+	return proxy.upstream.KeyspaceDelete(ctx, payload)
 }
 
-func (proxy *proxyCacheWithToken) ServiceKeyGet(ctx context.Context, payload driplimit.ServiceKeyGetPayload) (sk *driplimit.ServiceKey, err error) {
-	sk, found := proxy.cache.ServiceKeys.Get(generate.Hash(proxy.token))
+func (proxy *proxyCache) ServiceKeyGet(ctx context.Context, payload driplimit.ServiceKeyGetPayload) (sk *driplimit.ServiceKey, err error) {
+	sk, found := proxy.cache.ServiceKeys.Get(generate.Hash(payload.ServiceToken()))
 	if found {
 		return sk, nil
 	}
-	sk, err = proxy.upstream.WithToken(proxy.token).ServiceKeyGet(ctx, payload)
+	sk, err = proxy.upstream.ServiceKeyGet(ctx, payload)
 	if err != nil {
 		return nil, err
 	}
-	proxy.cache.ServiceKeys.Add(generate.Hash(proxy.token), sk)
+	proxy.cache.ServiceKeys.Add(generate.Hash(payload.ServiceToken()), sk)
 	return sk, nil
 }
 
-func (proxy *proxyCacheWithToken) ServiceKeyCreate(ctx context.Context, payload driplimit.ServiceKeyCreatePayload) (sk *driplimit.ServiceKey, err error) {
-	return proxy.upstream.WithToken(proxy.token).ServiceKeyCreate(ctx, payload)
+func (proxy *proxyCache) ServiceKeyCreate(ctx context.Context, payload driplimit.ServiceKeyCreatePayload) (sk *driplimit.ServiceKey, err error) {
+	return proxy.upstream.ServiceKeyCreate(ctx, payload)
 }
 
-func (proxy *proxyCacheWithToken) ServiceKeyList(ctx context.Context, payload driplimit.ServiceKeyListPayload) (sklist *driplimit.ServiceKeyList, err error) {
-	return proxy.upstream.WithToken(proxy.token).ServiceKeyList(ctx, payload)
+func (proxy *proxyCache) ServiceKeyList(ctx context.Context, payload driplimit.ServiceKeyListPayload) (sklist *driplimit.ServiceKeyList, err error) {
+	return proxy.upstream.ServiceKeyList(ctx, payload)
 }
 
-func (proxy *proxyCacheWithToken) ServiceKeyDelete(ctx context.Context, payload driplimit.ServiceKeyDeletePayload) (err error) {
-	return proxy.upstream.WithToken(proxy.token).ServiceKeyDelete(ctx, payload)
+func (proxy *proxyCache) ServiceKeyDelete(ctx context.Context, payload driplimit.ServiceKeyDeletePayload) (err error) {
+	return proxy.upstream.ServiceKeyDelete(ctx, payload)
+}
+
+func (proxy *proxyCache) ServiceKeySetToken(ctx context.Context, payload driplimit.ServiceKeySetTokenPayload) (err error) {
+	return proxy.upstream.ServiceKeySetToken(ctx, payload)
 }
