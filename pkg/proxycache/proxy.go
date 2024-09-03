@@ -95,7 +95,7 @@ func (proxy *proxyCache) KeyCheck(ctx context.Context, payload driplimit.KeysChe
 	return key, nil
 }
 
-func (proxy *proxyCache) KeyCreate(ctx context.Context, payload driplimit.KeyCreatePayload) (key *driplimit.Key, token *string, err error) {
+func (proxy *proxyCache) KeyCreate(ctx context.Context, payload driplimit.KeyCreatePayload) (key *driplimit.Key, err error) {
 	return proxy.upstream.KeyCreate(ctx, payload)
 }
 

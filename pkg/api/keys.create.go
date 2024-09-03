@@ -46,12 +46,11 @@ func (api *Server) keysCreate() *rpc {
 				return err
 			}
 
-			key, token, err := api.service.KeyCreate(c.Context(), *payload.WithServiceToken(token(c)))
+			key, err := api.service.KeyCreate(c.Context(), *payload.WithServiceToken(token(c)))
 			if err != nil {
 				return err
 			}
 
-			key.Token = *token
 			return c.JSON(key)
 		},
 	}

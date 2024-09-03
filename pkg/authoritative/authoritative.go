@@ -55,12 +55,12 @@ func (service *Authoritative) KeyCheck(ctx context.Context, payload driplimit.Ke
 }
 
 // KeyCreate creates a new key with the given payload and returns the key information and the token.
-func (service *Authoritative) KeyCreate(ctx context.Context, payload driplimit.KeyCreatePayload) (key *driplimit.Key, token *string, err error) {
-	key, token, err = service.store.CreateKey(ctx, payload)
+func (service *Authoritative) KeyCreate(ctx context.Context, payload driplimit.KeyCreatePayload) (key *driplimit.Key, err error) {
+	key, err = service.store.CreateKey(ctx, payload)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create key: %w", err)
+		return nil, fmt.Errorf("failed to create key: %w", err)
 	}
-	return key, token, nil
+	return key, nil
 }
 
 // KeyGet returns key based on the given payload. It ensures that the remaining count is up to date if necessary.

@@ -8,7 +8,7 @@ import (
 // Service is the main driplimit service interface.
 type Service interface {
 	KeyCheck(ctx context.Context, payload KeysCheckPayload) (key *Key, err error)
-	KeyCreate(ctx context.Context, payload KeyCreatePayload) (key *Key, token *string, err error)
+	KeyCreate(ctx context.Context, payload KeyCreatePayload) (key *Key, err error)
 	KeyGet(ctx context.Context, payload KeyGetPayload) (key *Key, err error)
 	KeyList(ctx context.Context, payload KeyListPayload) (klist *KeyList, err error)
 	KeyDelete(ctx context.Context, payload KeyDeletePayload) (err error)

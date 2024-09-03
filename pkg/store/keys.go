@@ -87,30 +87,30 @@ func (k *KeyModel) ValidateToken(token string) bool {
 }
 
 // CreateKey creates a new key.
-func (sqlite *Store) CreateKey(ctx context.Context, payload driplimit.KeyCreatePayload) (*driplimit.Key, *string, error) {
+func (sqlite *Store) CreateKey(ctx context.Context, payload driplimit.KeyCreatePayload) (*driplimit.Key, error) {
 	ks, err := sqlite.GetKeyspaceByID(ctx, payload.KSID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, driplimit.ErrItemNotFound("keyspace")
+			return nil, driplimit.ErrItemNotFound("keyspace")
 		}
-		return nil, nil, fmt.Errorf("failed to get keyspace by id: %w", err)
+		return nil, fmt.Errorf("failed to get keyspace by id: %w", err)
 	}
 
-	key := new(KeyModel)
+	model := new(KeyModel)
 	token := ks.KeysPrefix + generate.Token()
 
-	key.KID = "k_" + generate.ID()
-	key.KSID = ks.KSID
-	key.ExpiresAt = TimeNano{Time: payload.ExpiresAt}
-	key.CreatedAt = TimeNano{Time: time.Now()}
-	key.LastUsed = TimeNano{Time: time.Time{}}
-	key.TokenHash = generate.Hash(token)
+	model.KID = "k_" + generate.ID()
+	model.KSID = ks.KSID
+	model.ExpiresAt = TimeNano{Time: payload.ExpiresAt}
+	model.CreatedAt = TimeNano{Time: time.Now()}
+	model.LastUsed = TimeNano{Time: time.Time{}}
+	model.TokenHash = generate.Hash(token)
 	if payload.Ratelimit.Configured() {
-		key.RateLimitStateRemaining = payload.Ratelimit.Limit
-		key.RateLimitStateLastRefilled = TimeNano{Time: time.Now()}
-		key.RateLimitLimit = payload.Ratelimit.Limit
-		key.RateLimitRefillRate = payload.Ratelimit.RefillRate
-		key.RateLimitRefillInterval = payload.Ratelimit.RefillInterval.Duration
+		model.RateLimitStateRemaining = payload.Ratelimit.Limit
+		model.RateLimitStateLastRefilled = TimeNano{Time: time.Now()}
+		model.RateLimitLimit = payload.Ratelimit.Limit
+		model.RateLimitRefillRate = payload.Ratelimit.RefillRate
+		model.RateLimitRefillInterval = payload.Ratelimit.RefillInterval.Duration
 	}
 
 	_, err = sqlite.db.NamedExecContext(ctx, `
@@ -141,12 +141,14 @@ func (sqlite *Store) CreateKey(ctx context.Context, payload driplimit.KeyCreateP
 		:rate_limit_limit,
 		:rate_limit_refill_rate,
 		:rate_limit_refill_interval
-	)`, key)
+	)`, model)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create key: %w", err)
+		return nil, fmt.Errorf("failed to create key: %w", err)
 	}
 
-	return key.ToKey(), &token, nil
+	k := model.ToKey()
+	k.Token = token
+	return k, nil
 }
 
 // GetKey returns a key by the given payload. Ratelimit is set with keyspace ratelimit if not configured

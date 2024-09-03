@@ -89,15 +89,15 @@ func (a *Authorizer) KeyCheck(ctx context.Context, payload KeysCheckPayload) (ke
 	return nil, ErrUnauthorized
 }
 
-func (a *Authorizer) KeyCreate(ctx context.Context, payload KeyCreatePayload) (key *Key, token *string, err error) {
+func (a *Authorizer) KeyCreate(ctx context.Context, payload KeyCreatePayload) (key *Key, err error) {
 	sk, err := a.caller(ctx, payload)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	if sk.Admin || sk.KeyspacesPolicies.Can(Write, payload.KSID) {
 		return a.driplimit.KeyCreate(ctx, payload)
 	}
-	return nil, nil, ErrUnauthorized
+	return nil, ErrUnauthorized
 }
 
 func (a *Authorizer) KeyGet(ctx context.Context, payload KeyGetPayload) (key *Key, err error) {

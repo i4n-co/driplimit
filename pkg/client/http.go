@@ -117,13 +117,13 @@ func (c *HTTP) KeyCheck(ctx context.Context, payload driplimit.KeysCheckPayload)
 	return key, nil
 }
 
-func (c *HTTP) KeyCreate(ctx context.Context, payload driplimit.KeyCreatePayload) (key *driplimit.Key, token *string, err error) {
+func (c *HTTP) KeyCreate(ctx context.Context, payload driplimit.KeyCreatePayload) (key *driplimit.Key, err error) {
 	key = new(driplimit.Key)
 	err = do(ctx, c, "/v1/keys.create", payload, key)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return key, &key.Token, nil
+	return key, nil
 }
 
 func (c *HTTP) KeyGet(ctx context.Context, payload driplimit.KeyGetPayload) (key *driplimit.Key, err error) {

@@ -41,9 +41,9 @@ func (v *Validator) KeyCheck(ctx context.Context, payload KeysCheckPayload) (key
 }
 
 // KeyCreate validates the payload and calls the KeyCreate method of the wrapped Driplimit service.
-func (v *Validator) KeyCreate(ctx context.Context, payload KeyCreatePayload) (key *Key, token *string, err error) {
+func (v *Validator) KeyCreate(ctx context.Context, payload KeyCreatePayload) (key *Key, err error) {
 	if err := payload.Validate(v.validator); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	return v.driplimit.KeyCreate(ctx, payload)
 }

@@ -93,41 +93,43 @@ func TestDriplimitAPI(t *testing.T) {
 
 	// KEYS
 	// create should fail as expiration is not configured
-	_, _, err = cli.KeyCreate(ctx, driplimit.KeyCreatePayload{
+	_, err = cli.KeyCreate(ctx, driplimit.KeyCreatePayload{
 		KSID: withRateLimitKS.KSID,
 	})
 	assert.ErrorIs(t, err, driplimit.ErrInvalidExpiration)
 
 	// should not fail as key creation is valid
 	expiresAt := time.Date(2024, 01, 01, 01, 01, 0, 0, time.UTC)
-	k, token, err := cli.KeyCreate(ctx, driplimit.KeyCreatePayload{
+	k, err := cli.KeyCreate(ctx, driplimit.KeyCreatePayload{
 		KSID:      withRateLimitKS.KSID,
 		ExpiresAt: expiresAt,
 	})
-	assert.NotEmpty(t, token)
+	assert.NotEmpty(t, k.Token)
 	assert.Equal(t, k.ExpiresAt, expiresAt)
 	assert.True(t, strings.HasPrefix(k.Token, "test_wrl_"))
 	assert.NoError(t, err)
 
 	// should fail as key is expired
-	_, err = cli.KeyCheck(ctx, driplimit.KeysCheckPayload{KSID: withRateLimitKS.KSID, Token: *token})
+	_, err = cli.KeyCheck(ctx, driplimit.KeysCheckPayload{KSID: withRateLimitKS.KSID, Token: k.Token})
 	assert.ErrorIs(t, err, driplimit.ErrKeyExpired)
 
 	expiresAt = time.Date(2050, 01, 01, 01, 01, 0, 0, time.UTC)
-	k, token, err = cli.KeyCreate(ctx, driplimit.KeyCreatePayload{
+	k, err = cli.KeyCreate(ctx, driplimit.KeyCreatePayload{
 		KSID:      withRateLimitKS.KSID,
 		ExpiresAt: expiresAt,
 	})
-	assert.NotEmpty(t, token)
+	assert.NotEmpty(t, k.Token)
 	assert.Equal(t, k.ExpiresAt, expiresAt)
 	assert.NoError(t, err)
+
+	token := k.Token
 
 	k, err = cli.KeyGet(ctx, driplimit.KeyGetPayload{KSID: k.KSID, KID: k.KID})
 	assert.NoError(t, err)
 	assert.True(t, !k.Expired())
 
 	// should succeed as key is not expired
-	k, err = cli.KeyCheck(ctx, driplimit.KeysCheckPayload{KSID: k.KSID, Token: *token})
+	k, err = cli.KeyCheck(ctx, driplimit.KeysCheckPayload{KSID: k.KSID, Token: token})
 	assert.NoError(t, err)
 	assert.Equal(t, k.Ratelimit.State.Remaining, int64(9))
 
