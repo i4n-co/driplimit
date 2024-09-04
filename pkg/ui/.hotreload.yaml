@@ -1,0 +1,17 @@
+log_level: debug
+
+watcher:
+  include:
+    - views
+
+builder:
+  script: |
+    npm run tailwind-rebuild
+    go build -o ./tmp/ui github.com/i4n-co/driplimit/cmd/ui
+
+runner:
+  script: |
+    killall ui || true
+    export VIEWS_DIR=$(pwd)/views/ 
+    export STATICS_DIR=$(pwd)/statics/ 
+    ./tmp/ui
