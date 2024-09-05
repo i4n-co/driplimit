@@ -7,11 +7,10 @@ watcher:
 builder:
   script: |
     npm run tailwind-rebuild
-    go build -o ./tmp/ui github.com/i4n-co/driplimit/cmd/ui
+    go build -o ./ui github.com/i4n-co/driplimit/cmd/ui
 
 runner:
-  script: |
-    killall ui || true
-    export VIEWS_DIR=$(pwd)/views/ 
-    export STATICS_DIR=$(pwd)/statics/ 
-    ./tmp/ui
+  command: ./ui
+  envs:
+    - VIEWS_DIR=./views/
+    - STATICS_DIR=./statics/

@@ -1,0 +1,63 @@
+<div class="container mx-auto border-2 border-gray-900 bg-yellow-50">
+  <div class="flex border-b-2 border-gray-900 p-2 font-bold">
+    <div>{{ .Title }}</div>
+    <div class="ml-auto">
+      <a href="#">
+        <img src="/statics/feather/github.svg" alt="github" />
+      </a>
+    </div>
+  </div>
+  <div class="flex border-b-2 border-gray-900">
+    <ol class="hidden items-center gap-2 pl-2 sm:flex">
+      {{ range $i, $nav := .Breadcrumbs }}
+        {{ if ne $i 0 }}
+          >
+        {{ end }}
+        {{ if eq $nav.Name "Home" }}
+          <a href="{{ $nav.Href }}" class="hover:text-pink-200"
+            >{{ icon "home" }}</a
+          >
+          {{ continue }}
+        {{ end }}
+        <a href="{{ $nav.Href }}">
+          <li class="p-1 font-semibold hover:bg-gray-900 hover:text-pink-200">
+            {{ $nav.Name }}
+          </li>
+        </a>
+      {{ end }}
+    </ol>
+    <ol class="flex items-center gap-2 sm:hidden">
+      {{ if ge (len .Breadcrumbs) 2 }}
+        {{ $penultimateBreadcrumb := index
+          .Breadcrumbs (sub (len .Breadcrumbs) 2)
+        }}
+        <a href="{{ $penultimateBreadcrumb.Href }}">
+          <li
+            class="flex gap-2 p-1 font-semibold hover:bg-gray-900 hover:text-pink-200"
+          >
+            {{ icon "corner-left-up" }}
+            {{ $penultimateBreadcrumb.Name }}
+          </li>
+        </a>
+      {{ end }}
+    </ol>
+    <ol class="ml-auto flex items-center gap-2 border-l-2 border-gray-900">
+      <a href="#">
+        <li class="p-1 font-semibold hover:bg-gray-900 hover:text-pink-200">
+          Service Keys
+        </li>
+      </a>
+    </ol>
+  </div>
+
+  {{ embed }}
+
+
+  <div class="container mx-auto p-2 text-center font-bold">
+    <div class="flex items-center">
+      <div class="mx-auto flex">
+        Made with <span class="px-1 text-pink-300">{{ icon "heart" }}</span> in France.
+      </div>
+    </div>
+  </div>
+</div>

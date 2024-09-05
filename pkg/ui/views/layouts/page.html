@@ -7,8 +7,10 @@
     <link href="/statics/css/main.css" rel="stylesheet" />
   </head>
 
-  <body class="bg-yellow-50 p-2 font-mono">
+  <body class="p-2 font-mono" hx-ext="sse" sse-connect="/sse">
     {{ embed }}
     <script src="/statics/js/htmx.org/dist/htmx.min.js"></script>
+    <script src="/statics/js/htmx-ext-sse/sse.js"></script>
+    {{ template "script_sse" }}
   </body>
 </html>

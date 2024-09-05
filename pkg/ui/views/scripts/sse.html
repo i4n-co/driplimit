@@ -1,0 +1,6 @@
+{{ define "script_sse" }}
+<div
+  hx-trigger="sse:restart"
+  hx-on:sse:restart="window.location.reload()"
+></div>
+{{ end }}

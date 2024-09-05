@@ -1,0 +1,12 @@
+<div class="container mx-auto border-x-2 border-gray-900">
+  {{ range $ks := .Keyspaces }}
+    <a href="/keyspaces/{{ $ks.KSID }}">
+      <div
+        class="flex items-center p-1 hover:bg-gray-950 hover:font-bold hover:text-pink-200"
+      >
+        <div class="px-1">{{ icon "folder" }}</div>
+        <span>{{ $ks.Name }}</span>
+      </div>
+    </a>
+  {{ end }}
+</div>
