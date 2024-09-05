@@ -33,6 +33,7 @@ func New(service driplimit.Service, logger *slog.Logger) *Server {
 	server.router.Use("/statics", loadStaticsMiddleware())
 	server.router.Get("/keyspaces", server.keyspaceList)
 	server.router.Get("/keyspaces/:id", server.keyspaceView)
+	server.router.Get("/keyspaces/:id/key_new", server.keyCreate)
 	server.router.Get("/sse", server.sse)
 
 	return server
@@ -228,6 +229,42 @@ func (ui *Server) keyspaceView(c *fiber.Ctx) error {
 							Duration: 1000 * time.Millisecond,
 						},
 					},
+				},
+			},
+		},
+	}, "layouts/page", "layouts/dashboard")
+}
+
+func (ui *Server) keyCreate(c *fiber.Ctx) error {
+	return c.Render("dashboard/key_new", fiber.Map{
+		"Title": "Driplimit",
+		"Breadcrumbs": []Breadcrumb{
+			{
+				Href: "/",
+				Name: "Home",
+			},
+			{
+				Href: "/keyspaces",
+				Name: "Keyspaces",
+			},
+			{
+				Href: "/keyspaces/id1",
+				Name: "data.jumeaux-numeriques.fr",
+			},
+			{
+				Href: c.Path(),
+				Name: "Create Key",
+			},
+		},
+		"Keyspace": driplimit.Keyspace{
+			KSID:       "id1",
+			Name:       "data.jumeaux-numeriques.fr",
+			KeysPrefix: "bdx_",
+			Ratelimit: &driplimit.Ratelimit{
+				Limit:      10,
+				RefillRate: 1,
+				RefillInterval: driplimit.Milliseconds{
+					Duration: 1000 * time.Millisecond,
 				},
 			},
 		},

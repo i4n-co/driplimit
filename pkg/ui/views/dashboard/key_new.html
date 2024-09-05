@@ -1,0 +1,98 @@
+<div class="container mx-auto border-b-2 border-gray-900 bg-lime-100 p-1">
+  <div class="flex items-center px-2">
+    {{ icon "key" }}
+    <div class="px-2">
+      Create key
+      <div class="text-xs">
+        Add new key in the keyspace
+        {{ .Keyspace.Name }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="p-4">
+  <form action="" method="post">
+    <div
+      x-data="{override: false, datetime: '2050-01-01T01:00'}"
+      class="flex flex-col gap-2"
+    >
+      <label class="flex flex-col">
+        <span class="flex items-center"
+          >Expiration date<span class="ml-auto p-1 text-xs text-gray-700"
+            >required</span
+          ></span
+        >
+        <span class="py-1 text-xs text-gray-700"
+          >Time at which the key will expire (in UTC)</span
+        >
+        <input type="datetime-local" x-model="datetime" class="" />
+        <div class="flex items-center gap-2 text-xs text-pink-500">
+          <span class="text-gray-700">example:</span>
+          <button
+            type="button"
+            class="my-1 rounded bg-gray-100 p-1 hover:bg-gray-200"
+            x-on:click="datetime = new Date(Date.now()).toISOString().slice(0,-8)"
+          >
+            now
+          </button>
+          <button
+            type="button"
+            class="my-1 rounded bg-gray-100 p-1 hover:bg-gray-200"
+            x-on:click="datetime = new Date(Date.now()+1000*60*5).toISOString().slice(0,-8)"
+          >
+            in 5 min
+          </button>
+          <button
+            type="button"
+            class="my-1 rounded bg-gray-100 p-1 hover:bg-gray-200"
+            x-on:click="datetime = new Date(Date.now()+1000*60*60*24).toISOString().slice(0,-8)"
+          >
+            in 1 day
+          </button>
+          <button
+            type="button"
+            class="my-1 rounded bg-gray-100 p-1 hover:bg-gray-200"
+            x-on:click="datetime = '2050-01-01T01:00'"
+          >
+            in 2050
+          </button>
+        </div>
+      </label>
+      <label class="flex items-center gap-2">
+        <input
+          x-model="override"
+          type="checkbox"
+          class="text-pink-300"
+          checked
+        />
+        <span>Custom ratelimit</span>
+      </label>
+      <div x-show="override" class="flex flex-nowrap gap-2 text-sm">
+        <label class="flex flex-col">
+          <span>Refill rate</span>
+          <input type="text" class="w-1/4 min-w-full" placeholder="1" />
+        </label>
+        <label class="flex flex-col">
+          <span>Refill interval</span>
+          <input type="text" class="w-1/2 min-w-full" placeholder="10s" />
+        </label>
+        <label class="flex flex-col">
+          <span>Limit</span>
+          <input type="number" class="w-1/4 min-w-full" placeholder="10" />
+        </label>
+      </div>
+      <div class="mt-4 flex flex-row-reverse items-center gap-4">
+        <button
+          class="w-1/4 max-w-24 border-2 bg-gray-900 font-bold text-pink-400 hover:text-pink-300"
+          type="submit"
+        >
+          Create
+        </button>
+        <a href="/keyspaces/{{ .Keyspace.KSID }}" class="text-pink-700"
+          >Cancel</a
+        >
+      </div>
+    </div>
+  </form>
+</div>

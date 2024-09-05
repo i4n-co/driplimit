@@ -1,16 +1,14 @@
 <div class="container mx-auto border-b-2 border-gray-900">
   <div class="flex bg-lime-100 p-2">
     {{ icon "info" }}
-    <div class="px-2">Keyspace</div>
+    <div class="px-2">Infos</div>
     <div class="ml-auto hover:text-pink-300">
       {{ icon "edit" }}
     </div>
   </div>
 </div>
 
-<div class="container mx-auto border-b-2 border-gray-900 px-4 py-2">
-  <div class="p-2 underline">Infos</div>
-
+<div class="container mx-auto px-4 py-2">
   <table class="table-fixed">
     <tr class="">
       <td class="px-2">name</td>
@@ -52,12 +50,15 @@
   </table>
 </div>
 <div class="container mx-auto border-b-2 border-gray-900">
-  <div class="flex  bg-lime-100 p-2">
+  <div class="flex bg-lime-100 p-2">
     {{ icon "list" }}
     <div class="px-2">Keys</div>
-    <div class="ml-auto hover:text-pink-300">
+    <a
+      class="ml-auto hover:text-pink-300"
+      href="/keyspaces/{{ .Keyspace.KSID }}/key_new"
+    >
       {{ icon "plus-square" }}
-    </div>
+    </a>
   </div>
 </div>
 <div class="container mx-auto border-b-2 border-gray-900">
