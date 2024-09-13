@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
+	"log/slog"
 	"net"
 	"net/http"
 	"time"
@@ -18,6 +18,7 @@ type HTTP struct {
 	upstreamURL     string
 	sendRequestFunc func(req *http.Request) (*http.Response, error)
 	serviceToken    string
+	log             *slog.Logger
 }
 
 func (http *HTTP) clone() *HTTP {
@@ -25,29 +26,16 @@ func (http *HTTP) clone() *HTTP {
 		upstreamURL:     http.upstreamURL,
 		sendRequestFunc: http.sendRequestFunc,
 		serviceToken:    http.serviceToken,
+		log:             http.log,
 	}
 }
 
 // New creates a new driplimit http client
-func New(upstreamURL string, timeout ...time.Duration) *HTTP {
-	timeoutDuration := 5 * time.Second
-	if len(timeout) > 0 && timeout[0] > 0 {
-		timeoutDuration = timeout[0]
-	}
-	transport := &http.Transport{
-		DialContext: (&net.Dialer{
-			Timeout: timeoutDuration,
-		}).DialContext,
-		TLSHandshakeTimeout: timeoutDuration,
-	}
-	client := &http.Client{
-		Timeout:   timeoutDuration,
-		Transport: transport,
-	}
-	return &HTTP{
-		upstreamURL:     upstreamURL,
-		sendRequestFunc: client.Do,
-	}
+func New(upstreamURL string) *HTTP {
+	client := new(HTTP)
+	client.upstreamURL = upstreamURL
+	client = client.WithTimeout(5 * time.Second)
+	return client
 }
 
 // WithSendRequestFunc replace the default client http Do func by a custom one.
@@ -62,6 +50,31 @@ func (h *HTTP) WithSendRequestFunc(f func(req *http.Request) (*http.Response, er
 func (h *HTTP) WithServiceToken(token string) *HTTP {
 	nh := h.clone()
 	nh.serviceToken = token
+	return nh
+}
+
+func (h *HTTP) WithLogger(logger *slog.Logger) *HTTP {
+	nh := h.clone()
+	nh.log = logger
+	return nh
+}
+
+func (h *HTTP) WithTimeout(timeout time.Duration) *HTTP {
+	nh := h.clone()
+
+	transport := &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout: timeout,
+		}).DialContext,
+		TLSHandshakeTimeout: timeout,
+	}
+	client := &http.Client{
+		Timeout:   timeout,
+		Transport: transport,
+	}
+
+	nh.sendRequestFunc = client.Do
+
 	return nh
 }
 
@@ -97,19 +110,8 @@ func do[K any](ctx context.Context, c *HTTP, action string, payload driplimit.Pa
 		return driplimit.ErrFromHTTPCode(resp.StatusCode)
 	}
 
-	bodybuf := new(bytes.Buffer)
-	io.Copy(bodybuf, resp.Body)
-
-	r := bytes.NewReader(bodybuf.Bytes())
-	b, err := io.ReadAll(r)
-	if err != nil {
-		return err
-	}
-	fmt.Println(string(b))
-
-	r.Seek(0, 0)
 	if len(target) > 0 {
-		err = json.NewDecoder(r).Decode(target[0])
+		err = json.NewDecoder(resp.Body).Decode(target[0])
 		if err != nil {
 			return fmt.Errorf("failed to decode response: %w", err)
 		}

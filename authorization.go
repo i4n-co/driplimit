@@ -67,6 +67,7 @@ func NewAuthorizer(driplimit Service) *Authorizer {
 }
 
 // caller gets the service key from the context.
+// -- NO
 func (a *Authorizer) caller(ctx context.Context, payload Payload) (sk *ServiceKey, err error) {
 	sk, err = a.driplimit.ServiceKeyGet(ctx, ServiceKeyGetPayload{Token: payload.ServiceToken()})
 	if err != nil {

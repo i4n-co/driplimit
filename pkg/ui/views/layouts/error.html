@@ -1,0 +1,28 @@
+{{ define "layouts/error@partial" }}
+  <div
+    x-data="timer(5000)"
+    x-show="!done()"
+    class="mx-autorounded border-b-2 border-gray-900 bg-red-200 p-6"
+  >
+    <div class="flex items-center gap-2 font-semibold">
+      {{ icon "alert-octagon" }}
+      {{ . }}
+      <div class="ml-auto">
+        <button
+          x-on:click="close()"
+          class="text-gray-500 transition hover:text-gray-900"
+        >
+          {{ icon "x" }}
+        </button>
+      </div>
+    </div>
+  </div>
+{{ end }}
+
+
+<div class="mx-autorounded border-b-2 border-gray-900 bg-red-200 p-6">
+  <div class="flex items-center gap-2 font-semibold">
+    {{ icon "alert-octagon" }}
+    {{ .Message }}
+  </div>
+</div>

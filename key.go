@@ -11,7 +11,7 @@ import (
 
 // Key represents a driplimit key.
 type Key struct {
-	KID       string     `json:"kid"`
+	KID    string     `json:"kid"`
 	KSID      string     `json:"ksid"`
 	Token     string     `json:"token,omitempty"`
 	LastUsed  time.Time  `json:"last_used"`

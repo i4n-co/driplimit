@@ -8,7 +8,7 @@
   </div>
 </div>
 
-<div class="container mx-auto px-4 py-2">
+<div class="container mx-auto px-4 py-2 border-b-2 border-gray-900">
   <table class="table-fixed">
     <tr class="">
       <td class="px-2">name</td>
@@ -24,31 +24,32 @@
     </tr>
   </table>
 </div>
-
-<div class="container mx-auto border-b-2 border-gray-900 px-4 py-2">
-  <div class="p-2 underline">Ratelimit</div>
-  <table class="table-fixed">
-    <tr class="">
-      <td class="px-2">limit</td>
-      <td class="px-2 font-semibold">{{ .Keyspace.Ratelimit.Limit }}</td>
-    </tr>
-    <tr class="">
-      <td class="px-2">refill</td>
-    </tr>
-    <tr class="">
-      <td class="px-2">├─ interval</td>
-      <td class="px-2 font-semibold">
-        {{ .Keyspace.Ratelimit.RefillInterval.String }}
-      </td>
-    </tr>
-    <tr>
-      <td class="px-2">└─ rate</td>
-      <td class="px-2 font-semibold">
-        {{ .Keyspace.Ratelimit.RefillRate }}
-      </td>
-    </tr>
-  </table>
-</div>
+{{ if .Keyspace.Ratelimit }}
+  <div class="container mx-auto px-4 py-2">
+    <div class="p-2 underline">Ratelimit</div>
+    <table class="table-fixed">
+      <tr class="">
+        <td class="px-2">limit</td>
+        <td class="px-2 font-semibold">{{ .Keyspace.Ratelimit.Limit }}</td>
+      </tr>
+      <tr class="">
+        <td class="px-2">refill</td>
+      </tr>
+      <tr class="">
+        <td class="px-2">├─ interval</td>
+        <td class="px-2 font-semibold">
+          {{ .Keyspace.Ratelimit.RefillInterval.String }}
+        </td>
+      </tr>
+      <tr>
+        <td class="px-2">└─ rate</td>
+        <td class="px-2 font-semibold">
+          {{ .Keyspace.Ratelimit.RefillRate }}
+        </td>
+      </tr>
+    </table>
+  </div>
+{{ end }}
 <div class="container mx-auto border-b-2 border-gray-900">
   <div class="flex bg-lime-100 p-2">
     {{ icon "list" }}

@@ -3,13 +3,13 @@
 @tailwind utilities;
 
 @layer base {
-    input {
+    form input {
         @apply  focus:border-pink-400 focus:outline-none focus:ring-0 border-2 border-gray-200 p-1 selection:bg-pink-300;
     }
-    input[type=checkbox] {
+    form input[type=checkbox] {
         @apply  accent-pink-400;
     }
-    button {
+    form button {
         @apply  focus:border-pink-400 focus:outline-none focus:ring-0 border-2 border-gray-200 p-1 selection:bg-pink-300;
     }
 }
