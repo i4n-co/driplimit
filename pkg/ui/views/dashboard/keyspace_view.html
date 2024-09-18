@@ -8,7 +8,7 @@
   </div>
 </div>
 
-<div class="container mx-auto px-4 py-2 border-b-2 border-gray-900">
+<div class="container mx-auto border-b-2 border-gray-900 px-4 py-2">
   <table class="table-fixed">
     <tr class="">
       <td class="px-2">name</td>
@@ -55,6 +55,7 @@
     {{ icon "list" }}
     <div class="px-2">Keys</div>
     <a
+      hx-boost="true"
       class="ml-auto hover:text-pink-300"
       href="/keyspaces/{{ .Keyspace.KSID }}/key_new"
     >
@@ -74,4 +75,32 @@
       </div>
     </a>
   {{ end }}
+  <div class="flex">
+    <nav class="mx-auto py-4" role="navigation" aria-label="pagination">
+      <ul class="flex items-center">
+        {{ .Pagination }}
+        {{ define "dashboard/keys_pagination" }}
+          {{ if .Current }}
+            <li>
+              <a
+                hx-boost="true"
+                class="bg-gray-200 p-2 text-pink-500 hover:bg-gray-200"
+                href="{{ .Path }}?page={{ .Page }}&limit={{ .Limit }}"
+                >{{ .Page }}</a
+              >
+            </li>
+          {{ else }}
+            <li>
+              <a
+                hx-boost="true"
+                class="p-2 text-pink-500 hover:bg-gray-200"
+                href="{{ .Path }}?page={{ .Page }}&limit={{ .Limit }}"
+                >{{ .Page }}</a
+              >
+            </li>
+          {{ end }}
+        {{ end }}
+      </ul>
+    </nav>
+  </div>
 </div>

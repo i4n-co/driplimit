@@ -10,6 +10,7 @@ import (
 
 func KeyspaceView(service driplimit.Service, logger *slog.Logger) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
+
 		keyspace, err := service.KeyspaceGet(c.Context(), driplimit.KeyspaceGetPayload{
 			KSID: c.Params("ksid"),
 		})
@@ -17,7 +18,13 @@ func KeyspaceView(service driplimit.Service, logger *slog.Logger) func(c *fiber.
 			return err
 		}
 
+		listpayload := new(driplimit.ListPayload)
+		if err := c.QueryParser(listpayload); err != nil {
+			return layouts.NewError(400, "Failed to parse url parameters")
+		}
+
 		keylist, err := service.KeyList(c.Context(), driplimit.KeyListPayload{
+			List: *listpayload,
 			KSID: c.Params("ksid"),
 		})
 		if err != nil {
@@ -41,7 +48,8 @@ func KeyspaceView(service driplimit.Service, logger *slog.Logger) func(c *fiber.
 			},
 			"Keyspace": keyspace,
 
-			"KeyList": keylist,
-		}, "layouts/page", "layouts/dashboard")
+			"KeyList":    keylist,
+			"Pagination": layouts.Paginate(c, "dashboard/keys_pagination", keylist.List),
+		}, "layouts/dashboard", "layouts/page")
 	}
 }
