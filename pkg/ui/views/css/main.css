@@ -10,6 +10,17 @@
         @apply  accent-pink-400;
     }
     form button {
-        @apply  focus:border-pink-400 focus:outline-none focus:ring-0 border-2 border-gray-200 p-1 selection:bg-pink-300;
+        @apply  focus:border-pink-400 focus:outline-none focus:ring-0 border-2 border-gray-200 p-1 selection:bg-pink-300 bg-gray-900 font-bold text-pink-400 hover:text-pink-300;
     }
+}
+
+/* For Webkit-based browsers (Chrome, Safari and Opera) */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+/* For IE, Edge and Firefox */
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
 }

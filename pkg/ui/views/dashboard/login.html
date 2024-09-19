@@ -1,0 +1,25 @@
+<div class="container mx-auto border-b-2 border-gray-900 bg-lime-100 p-1">
+  <div class="flex items-center px-2">
+    {{ icon "log-in" }}
+    <div class="px-2">
+      Login
+      <div class="text-xs">Connect with a driplimit service key</div>
+    </div>
+  </div>
+</div>
+<div class="container p-8">
+  <form hx-post="">
+    {{ .CSRFHiddenInput }}
+    <label class="flex flex-col gap-1">
+      <span>Token</span>
+      <input
+        type="password"
+        name="service_key_token"
+        placeholder="sk_************************"
+      />
+    </label>
+    <div class="flex pt-8">
+      <button class="mx-auto" type="submit">Login</button>
+    </div>
+  </form>
+</div>

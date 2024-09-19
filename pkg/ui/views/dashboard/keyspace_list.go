@@ -8,9 +8,9 @@ import (
 	"github.com/i4n-co/driplimit/pkg/ui/views/layouts"
 )
 
-func KeyspaceList(service driplimit.Service, logger *slog.Logger) func(c *fiber.Ctx) error {
+func KeyspaceList(logger *slog.Logger) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		list, err := service.KeyspaceList(c.Context(), driplimit.KeyspaceListPayload{})
+		list, err := service(c).KeyspaceList(c.Context(), driplimit.KeyspaceListPayload{})
 		if err != nil {
 			return err
 		}

@@ -133,7 +133,7 @@
     <div class="flex items-center gap-1">
       <a href="/keyspaces/{{ .Keyspace.KSID }}/keys/{{ .Key.KID }}">
         <span class="p-1 text-pink-500 transition hover:text-pink-700">
-          {{ .Key.KID }}
+          The key
         </span>
       </a>
 
@@ -156,12 +156,14 @@
       <div
         class="mt-2 flex w-full items-center gap-3 rounded border-2 border-blue-50 bg-blue-50 p-2 hover:border-pink-300"
       >
-        <span
-          class="text-gray-700"
+        <pre
+          class="overflow-x-scroll scrollbar-hide text-gray-700 text-xs"
           x-text="show_token ? token : '*'.repeat(token.length)"
-        ></span>
+        ></pre>
         <div class="ml-auto flex items-center gap-2">
-          <span :class="{ 'hidden': copied.done() }" class="text-pink-400"
+          <span
+            :class="{ 'hidden': copied.done() }"
+            class="whitespace-nowrap text-pink-400"
             >copied !</span
           >
           <button

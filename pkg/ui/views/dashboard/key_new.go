@@ -50,9 +50,9 @@ func (form *KeyNewForm) KeyCreatePayload(ksid string) (*driplimit.KeyCreatePaylo
 	}, nil
 }
 
-func KeyNewHXPost(service driplimit.Service, logger *slog.Logger) func(c *fiber.Ctx) error {
+func KeyNewHXPost(logger *slog.Logger) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		keyspace, err := service.KeyspaceGet(c.Context(), driplimit.KeyspaceGetPayload{
+		keyspace, err := service(c).KeyspaceGet(c.Context(), driplimit.KeyspaceGetPayload{
 			KSID: c.Params("ksid"),
 		})
 		if err != nil {
@@ -71,7 +71,7 @@ func KeyNewHXPost(service driplimit.Service, logger *slog.Logger) func(c *fiber.
 			return err
 		}
 
-		key, err = service.KeyCreate(c.Context(), *payload)
+		key, err = service(c).KeyCreate(c.Context(), *payload)
 		if err != nil {
 			return err
 		}
@@ -83,9 +83,9 @@ func KeyNewHXPost(service driplimit.Service, logger *slog.Logger) func(c *fiber.
 	}
 }
 
-func KeyNew(service driplimit.Service, logger *slog.Logger) func(c *fiber.Ctx) error {
+func KeyNew(logger *slog.Logger) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		keyspace, err := service.KeyspaceGet(c.Context(), driplimit.KeyspaceGetPayload{
+		keyspace, err := service(c).KeyspaceGet(c.Context(), driplimit.KeyspaceGetPayload{
 			KSID: c.Params("ksid"),
 		})
 		if err != nil {

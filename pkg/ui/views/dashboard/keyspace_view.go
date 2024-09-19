@@ -8,10 +8,10 @@ import (
 	"github.com/i4n-co/driplimit/pkg/ui/views/layouts"
 )
 
-func KeyspaceView(service driplimit.Service, logger *slog.Logger) func(c *fiber.Ctx) error {
+func KeyspaceView(logger *slog.Logger) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 
-		keyspace, err := service.KeyspaceGet(c.Context(), driplimit.KeyspaceGetPayload{
+		keyspace, err := service(c).KeyspaceGet(c.Context(), driplimit.KeyspaceGetPayload{
 			KSID: c.Params("ksid"),
 		})
 		if err != nil {
@@ -23,7 +23,7 @@ func KeyspaceView(service driplimit.Service, logger *slog.Logger) func(c *fiber.
 			return layouts.NewError(400, "Failed to parse url parameters")
 		}
 
-		keylist, err := service.KeyList(c.Context(), driplimit.KeyListPayload{
+		keylist, err := service(c).KeyList(c.Context(), driplimit.KeyListPayload{
 			List: *listpayload,
 			KSID: c.Params("ksid"),
 		})

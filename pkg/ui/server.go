@@ -9,7 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/csrf"
 	"github.com/gofiber/fiber/v2/middleware/encryptcookie"
-	"github.com/i4n-co/driplimit"
+	"github.com/i4n-co/driplimit/pkg/client"
 	"github.com/i4n-co/driplimit/pkg/ui/views/dashboard"
 	"github.com/i4n-co/driplimit/pkg/ui/views/layouts"
 )
@@ -17,13 +17,13 @@ import (
 type ContextKey string
 
 type Server struct {
-	service driplimit.Service
+	service *client.HTTP
 	router  *fiber.App
 	logger  *slog.Logger
 	events  chan string
 }
 
-func New(service driplimit.Service, logger *slog.Logger) *Server {
+func New(service *client.HTTP, logger *slog.Logger) *Server {
 	server := &Server{
 		service: service,
 		logger:  logger,
@@ -33,9 +33,10 @@ func New(service driplimit.Service, logger *slog.Logger) *Server {
 		DisableStartupMessage: true,
 		Views:                 NewTemplateEngine(),
 		ErrorHandler:          server.errorHandler,
+		PassLocalsToViews:     true,
 	})
 	server.router.Use(encryptcookie.New(encryptcookie.Config{
-		Key:    "secret-thirty-2-character-string",
+		Key:    "c2VjcmV0LXRoaXJ0eS0yLWNoYXJhY3Rlci1zdHJpbgo=",
 		Except: []string{csrf.ConfigDefault.CookieName}, // exclude CSRF cookie
 	}))
 	server.router.Use(csrf.New(csrf.Config{
@@ -57,12 +58,17 @@ func New(service driplimit.Service, logger *slog.Logger) *Server {
 	}))
 	server.router.Use(csrfTokenTemplateMiddleware())
 
-	server.router.Get("/keyspaces", dashboard.KeyspaceList(service, logger))
-	server.router.Get("/keyspaces/:ksid", dashboard.KeyspaceView(service, logger))
-	server.router.Get("/keyspaces/:ksid/key_new", dashboard.KeyNew(service, logger))
-	server.router.Post("/keyspaces/:ksid/key_new", HXRequest, dashboard.KeyNewHXPost(service, logger))
-	server.router.Get("/sse", server.sse)
-	server.router.Use("/statics", StaticsMiddleware())
+	r := server.router.Group("/").Use(dashboard.AuthMiddleware(service))
+	r.Get("/keyspaces", dashboard.KeyspaceList(logger))
+	r.Get("/keyspaces/:ksid", dashboard.KeyspaceView(logger))
+	r.Get("/keyspaces/:ksid/key_new", dashboard.KeyNew(logger))
+	r.Post("/keyspaces/:ksid/key_new", HXRequest, dashboard.KeyNewHXPost(logger))
+	r.Get("/sse", server.sse)
+	r.Use("/statics", StaticsMiddleware())
+	r.Get("/login", dashboard.Login(logger))
+	r.Post("/login", dashboard.LoginHXPost(logger))
+	r.Get("/logout", dashboard.Logout(logger))
+
 	return server
 }
 
