@@ -1,0 +1,61 @@
+<div class="container mx-auto border-b-2 border-gray-900 bg-lime-100 p-1">
+  <div class="flex items-center px-2">
+    {{ icon "key" }}
+    <div class="px-2">
+      View key
+      <div class="text-xs">Key details and rate limiting status</div>
+    </div>
+  </div>
+</div>
+<div class="p-4">
+  <div class="flex-col">
+    <div class="flex gap-1">
+      <div class="font-semibold">KID:</div>
+      <div>{{ .Key.KID }}</div>
+    </div>
+    <div class="flex gap-1">
+      <div class="font-semibold">Last Used:</div>
+      <div>
+        {{ if not .Key.LastUsed.IsZero }}
+          {{ .Key.LastUsed.Format "2006-01-02" }}
+        {{ else }}
+          never
+        {{ end }}
+      </div>
+    </div>
+    <div class="flex gap-1">
+      <div class="font-semibold">Expires At:</div>
+      <div>
+        {{ if not .Key.ExpiresAt.IsZero }}
+          {{ .Key.ExpiresAt.Format "2006-01-02" }}
+        {{ else }}
+          never
+        {{ end }}
+      </div>
+    </div>
+    <div class="flex gap-1">
+      <div class="font-semibold">Ratelimit:</div>
+      <div>
+        {{ if .Key.Ratelimit }}
+          {{ template "dashboard/@ratelimit" .Key.Ratelimit }}
+        {{ else }}
+          {{ if .Keyspace.Ratelimit }}
+            {{ template "dashboard/@ratelimit" .Keyspace.Ratelimit }}
+          {{ else }}
+            none
+          {{ end }}
+        {{ end }}
+      </div>
+    </div>
+  </div>
+  <div class="flex">
+    <button
+      hx-confirm="Delete key {{ .Key.KID }} ?"
+      hx-headers='{"X-CSRF-Token": "{{ .CSRFToken }}" }'
+      hx-delete="/keyspaces/{{ .Keyspace.KSID }}/keys/{{ .Key.KID }}"
+      class="ml-auto w-1/4 max-w-24 border-2 bg-gray-900 p-2 font-bold text-pink-400 hover:text-pink-300"
+    >
+      Delete
+    </button>
+  </div>
+</div>

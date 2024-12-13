@@ -17,7 +17,7 @@ func Login(logger *slog.Logger) func(c *fiber.Ctx) error {
 		return c.Render("dashboard/login", fiber.Map{
 			"CSRFHiddenInput": c.Locals("csrf_template"),
 			"Title":           "Driplimit",
-		}, "layouts/page", "layouts/dashboard")
+		}, "layouts/dashboard", "layouts/page")
 	}
 }
 

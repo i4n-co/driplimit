@@ -21,12 +21,8 @@ func KeyspaceList(logger *slog.Logger) func(c *fiber.Ctx) error {
 					Href: "/",
 					Name: "Home",
 				},
-				{
-					Href: c.Path(),
-					Name: "Keyspaces",
-				},
 			},
 			"List": list,
-		}, "layouts/page", "layouts/dashboard")
+		}, "layouts/dashboard", "layouts/page")
 	}
 }

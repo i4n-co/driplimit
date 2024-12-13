@@ -19,7 +19,7 @@
       <td class="px-2 font-semibold">{{ .Keyspace.KSID }}</td>
     </tr>
     <tr>
-      <td class="px-2">key prefix</td>
+      <td class="px-2">key token prefix</td>
       <td class="px-2 font-semibold">{{ .Keyspace.KeysPrefix }}</td>
     </tr>
   </table>
@@ -64,43 +64,97 @@
   </div>
 </div>
 <div class="container mx-auto border-b-2 border-gray-900">
-  {{ range $k := .KeyList.Keys }}
-    <a href="#">
-      <div
-        class="flex w-full px-4 py-2 hover:bg-gray-950 hover:font-bold hover:text-pink-200"
-      >
-        <div class="px-1">{{ icon "key" }}</div>
-
-        {{ $k.KID }}
+  {{ if eq (len .KeyList.Keys) 0 }}
+    <div class="p-8 text-center text-gray-500">
+      No keys in keyspace
+      <div class="text-center">
+        <a
+          hx-boost="true"
+          href="/keyspaces/{{ .Keyspace.KSID }}/key_new"
+          class="mx-auto flex items-center justify-center gap-2 pt-2 text-pink-500 hover:text-pink-600"
+        >
+          Create your first key
+          {{ icon "plus-square" }}
+        </a>
       </div>
-    </a>
-  {{ end }}
-  <div class="flex">
-    <nav class="mx-auto py-4" role="navigation" aria-label="pagination">
-      <ul class="flex items-center">
-        {{ .Pagination }}
-        {{ define "dashboard/keys_pagination" }}
-          {{ if .Current }}
-            <li>
+    </div>
+  {{ else }}
+    <table class="w-full table-auto">
+      <thead>
+        <tr>
+          <th class="p-1 text-left">KID</th>
+          <th class="p-1 text-left">Last Used</th>
+          <th class="hidden p-1 text-left sm:block">Expires At</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range $k := .KeyList.Keys }}
+          <tr
+            hx-boost="true"
+            class="hover:bg-gray-950 hover:font-bold hover:text-pink-200"
+          >
+            <td class="p-1">
               <a
-                hx-boost="true"
-                class="bg-gray-200 p-2 text-pink-500 hover:bg-gray-200"
-                href="{{ .Path }}?page={{ .Page }}&limit={{ .Limit }}"
-                >{{ .Page }}</a
+                class="block w-full"
+                href="/keyspaces/{{ $.Keyspace.KSID }}/keys/{{ $k.KID }}"
+                >{{ $k.KID }}</a
               >
-            </li>
-          {{ else }}
-            <li>
+            </td>
+            <td class="p-1">
               <a
-                hx-boost="true"
-                class="p-2 text-pink-500 hover:bg-gray-200"
-                href="{{ .Path }}?page={{ .Page }}&limit={{ .Limit }}"
-                >{{ .Page }}</a
+                class="block w-full"
+                href="/keyspaces/{{ $.Keyspace.KSID }}/keys/{{ $k.KID }}"
               >
-            </li>
-          {{ end }}
+                {{ if not $k.LastUsed.IsZero }}
+                  {{ $k.LastUsed.Format "2006-01-02" }}
+                {{ else }}
+                  -
+                {{ end }}
+              </a>
+            </td>
+            <td class="hidden p-1 sm:block">
+              <a
+                class="block w-auto"
+                href="/keyspaces/{{ $.Keyspace.KSID }}/keys/{{ $k.KID }}"
+              >
+                {{ if not $k.ExpiresAt.IsZero }}
+                  {{ $k.ExpiresAt.Format "2006-01-02" }}
+                {{ else }}
+                  -
+                {{ end }}
+              </a>
+            </td>
+          </tr>
         {{ end }}
-      </ul>
-    </nav>
-  </div>
+      </tbody>
+    </table>
+    <div class="flex">
+      <nav class="mx-auto py-4" role="navigation" aria-label="pagination">
+        <ul class="flex items-center">
+          {{ .Pagination }}
+        </ul>
+      </nav>
+    </div>
+  {{ end }}
 </div>
+{{ define "dashboard/keys_pagination" }}
+  {{ if .Current }}
+    <li>
+      <a
+        hx-boost="true"
+        class="bg-gray-200 p-2 text-pink-500 hover:bg-gray-200"
+        href="{{ .Path }}?page={{ .Page }}&limit={{ .Limit }}"
+        >{{ .Page }}</a
+      >
+    </li>
+  {{ else }}
+    <li>
+      <a
+        hx-boost="true"
+        class="p-2 text-pink-500 hover:bg-gray-200"
+        href="{{ .Path }}?page={{ .Page }}&limit={{ .Limit }}"
+        >{{ .Page }}</a
+      >
+    </li>
+  {{ end }}
+{{ end }}

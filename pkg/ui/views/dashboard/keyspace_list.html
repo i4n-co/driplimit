@@ -1,3 +1,12 @@
+<div class="container mx-auto border-b-2 border-gray-900 bg-lime-100 p-1">
+  <div class="flex items-center px-2">
+    {{ icon "list" }}
+    <div class="px-2">
+      Keyspaces
+      <div class="text-xs">All keyspaces you can manage.</div>
+    </div>
+  </div>
+</div>
 <div class="container mx-auto my-2">
   {{ range $ks := .List.Keyspaces }}
     <a href="/keyspaces/{{ $ks.KSID }}">

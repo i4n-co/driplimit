@@ -157,7 +157,7 @@
         class="mt-2 flex w-full items-center gap-3 rounded border-2 border-blue-50 bg-blue-50 p-2 hover:border-pink-300"
       >
         <pre
-          class="overflow-x-scroll scrollbar-hide text-gray-700 text-xs"
+          class="scrollbar-hide overflow-x-scroll text-xs text-gray-700"
           x-text="show_token ? token : '*'.repeat(token.length)"
         ></pre>
         <div class="ml-auto flex items-center gap-2">
@@ -182,8 +182,6 @@
     </div>
     <div class="mt-4 flex gap-2 text-gray-600">
       {{ icon "alert-octagon" }}
-
-
       <div>
         <div class="font-semibold">this token will not be shown again</div>
         <div>please make sure to store it somewhere safe</div>
@@ -192,28 +190,40 @@
     {{ if .Key.Ratelimit }}
       <div class="container mx-auto px-4 py-2">
         <div class="p-2 underline">Custom Ratelimit</div>
-        <table class="table-fixed">
-          <tr class="">
-            <td class="px-2">limit</td>
-            <td class="px-2 font-semibold">{{ .Key.Ratelimit.Limit }}</td>
-          </tr>
-          <tr class="">
-            <td class="px-2">refill</td>
-          </tr>
-          <tr class="">
-            <td class="px-2">├─ interval</td>
-            <td class="px-2 font-semibold">
-              {{ .Key.Ratelimit.RefillInterval.String }}
-            </td>
-          </tr>
-          <tr>
-            <td class="px-2">└─ rate</td>
-            <td class="px-2 font-semibold">
-              {{ .Key.Ratelimit.RefillRate }}
-            </td>
-          </tr>
-        </table>
+        {{ template "dashboard/@ratelimit" .Key.Ratelimit }}
       </div>
     {{ end }}
   </div>
+{{ end }}
+
+{{ define "dashboard/@ratelimit" }}
+  <table class="table-fixed">
+    {{ if .State }}
+      <tr class="">
+        <td class="px-2">remaining</td>
+        <td class="px-2 font-semibold">{{ .State.Remaining }}</td>
+      </tr>
+    {{ end }}
+    <tr class="">
+      <td class="px-2">limit</td>
+      <td class="px-2 font-semibold">
+        {{ .Limit }}
+      </td>
+    </tr>
+    <tr class="">
+      <td class="px-2">refill</td>
+    </tr>
+    <tr class="">
+      <td class="px-2">├─ interval</td>
+      <td class="px-2 font-semibold">
+        {{ .RefillInterval.String }}
+      </td>
+    </tr>
+    <tr>
+      <td class="px-2">└─ rate</td>
+      <td class="px-2 font-semibold">
+        {{ .RefillRate }}
+      </td>
+    </tr>
+  </table>
 {{ end }}

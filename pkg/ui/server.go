@@ -40,8 +40,11 @@ func New(service *client.HTTP, logger *slog.Logger) *Server {
 		Except: []string{csrf.ConfigDefault.CookieName}, // exclude CSRF cookie
 	}))
 	server.router.Use(csrf.New(csrf.Config{
-		ContextKey: CSRFTokenContextKey,
+		ContextKey: "csrf_token",
 		Extractor: func(c *fiber.Ctx) (string, error) {
+			if token := c.Get("X-CSRF-Token"); token != "" {
+				return token, nil
+			}
 			type form struct {
 				Token string `form:"csrf_token"`
 			}
@@ -63,6 +66,8 @@ func New(service *client.HTTP, logger *slog.Logger) *Server {
 	r.Get("/keyspaces/:ksid", dashboard.KeyspaceView(logger))
 	r.Get("/keyspaces/:ksid/key_new", dashboard.KeyNew(logger))
 	r.Post("/keyspaces/:ksid/key_new", HXRequest, dashboard.KeyNewHXPost(logger))
+	r.Get("/keyspaces/:ksid/keys/:kid", dashboard.KeyView(logger))
+	r.Delete("/keyspaces/:ksid/keys/:kid", dashboard.KeyDelete(logger))
 	r.Get("/sse", server.sse)
 	r.Use("/statics", StaticsMiddleware())
 	r.Get("/login", dashboard.Login(logger))
